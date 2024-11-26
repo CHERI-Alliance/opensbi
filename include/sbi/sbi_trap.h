@@ -97,8 +97,10 @@
 #define SBI_TRAP_INFO_tinst			3
 /** Index of gva member in sbi_trap_info */
 #define SBI_TRAP_INFO_gva			4
+/** Index of reseved member in sbi_trap_info */
+#define SBI_TRAP_INFO_reseved			5
 /** Last member index in sbi_trap_info */
-#define SBI_TRAP_INFO_last			5
+#define SBI_TRAP_INFO_last			6
 
 /* clang-format on */
 
@@ -208,6 +210,18 @@ struct sbi_trap_info {
 	unsigned long tinst;
 	/** gva Guest virtual address in tval flag */
 	unsigned long gva;
+	/** reseved for CHERI capability aligned */
+	/*
+	 * Make sure the stack pointer is aligned to 16 bytes to as
+	 * SBI_TRAP_CONTEXT_SIZE is used to shift the stack pointer in trap
+	 * exception. In integer mode on zcherihybird would use sc/lc instruction
+	 * to initial the structe aligned to 16 bytes. It would have alignement
+	 * isseue if the stack is not aligned to 16 bytes.
+	 *
+	 * TODO: May need to remove it if the size of struct sbi_trap_context
+	 * changes in future
+	 */
+	unsigned long reseved;
 };
 
 /** Representation of trap context saved on stack */
