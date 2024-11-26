@@ -312,7 +312,11 @@
 /* Supervisor Trap Setup */
 #define CSR_SSTATUS			0x100
 #define CSR_SIE				0x104
+#if defined(__riscv_zcherihybrid)
+#define CSR_STVEC			stvec
+#else
 #define CSR_STVEC			0x105
+#endif
 #define CSR_SCOUNTEREN			0x106
 
 /* Supervisor Configuration */
@@ -322,8 +326,16 @@
 #define CSR_SCOUNTINHIBIT		0x120
 
 /* Supervisor Trap Handling */
+#if defined(__riscv_zcherihybrid)
+#define CSR_SSCRATCH			sscratch
+#else
 #define CSR_SSCRATCH			0x140
+#endif
+#if defined(__riscv_zcherihybrid)
+#define CSR_SEPC			sepc
+#else
 #define CSR_SEPC			0x141
+#endif
 #define CSR_SCAUSE			0x142
 #define CSR_STVAL			0x143
 #define CSR_SIP				0x144
@@ -389,9 +401,17 @@
 /* Virtual Supervisor Registers (H-extension) */
 #define CSR_VSSTATUS			0x200
 #define CSR_VSIE			0x204
+#if defined(__riscv_zcherihybrid)
+#define CSR_VSTVEC			vstvec
+#else
 #define CSR_VSTVEC			0x205
+#endif
 #define CSR_VSSCRATCH			0x240
+#if defined(__riscv_zcherihybrid)
+#define CSR_VSEPC			vsepc
+#else
 #define CSR_VSEPC			0x241
+#endif
 #define CSR_VSCAUSE			0x242
 #define CSR_VSTVAL			0x243
 #define CSR_VSIP			0x244
@@ -450,7 +470,11 @@
 #define CSR_MEDELEG			0x302
 #define CSR_MIDELEG			0x303
 #define CSR_MIE				0x304
+#if defined(__riscv_zcherihybrid)
+#define CSR_MTVEC			mtvec
+#else
 #define CSR_MTVEC			0x305
+#endif
 #define CSR_MCOUNTEREN			0x306
 #define CSR_MSTATUSH			0x310
 
@@ -459,8 +483,16 @@
 #define CSR_MENVCFGH			0x31a
 
 /* Machine Trap Handling */
+#if defined(__riscv_zcherihybrid)
+#define CSR_MSCRATCH			mscratch
+#else
 #define CSR_MSCRATCH			0x340
+#endif
+#if defined(__riscv_zcherihybrid)
+#define CSR_MEPC			mepc
+#else
 #define CSR_MEPC			0x341
+#endif
 #define CSR_MCAUSE			0x342
 #define CSR_MTVAL			0x343
 #define CSR_MIP				0x344
