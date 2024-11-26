@@ -16,9 +16,37 @@
 
 #ifdef __ASSEMBLER__
 #define __ASM_STR(x)	x
-#else
+
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define REG_ZERO	cnull
+#define REG(r)		c ## r
+
+#define PREG_NULL	cnull
+#define PREG(r)		c ## r
+#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+#define REG_ZERO	zero
+#define REG(r)		r
+
+#define PREG_NULL	zero
+#define PREG(r)		r
+#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#else /* !__ASSEMBLER__ */
 #define __ASM_STR(x)	#x
-#endif
+
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define REG_ZERO	"cnull"
+#define REG(r)		"c" #r
+
+#define PREG_NULL	"cnull"
+#define PREG(r)		"c" #r
+#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+#define REG_ZERO	"zero"
+#define REG(r)		#r
+
+#define PREG_NULL	"zero"
+#define PREG(r)		#r
+#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !__ASSEMBLER__ */
 
 #if __riscv_xlen == 64
 #define __REG_SEL(a, b)	__ASM_STR(a)
@@ -32,34 +60,141 @@
 #define PAGE_SIZE	(_AC(1, UL) << PAGE_SHIFT)
 #define PAGE_MASK	(~(PAGE_SIZE - 1))
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define REG_L		__REG_SEL(lc, lc)
+#define REG_S		__REG_SEL(sc, sc)
+#define SZREG		__REG_SEL(16, 8)
+#define LGREG		__REG_SEL(4, 3)
+
+#define XREG_L		__REG_SEL(ld, lw)
+#define XREG_S		__REG_SEL(sd, sw)
+#define SZXREG		__REG_SEL(8, 4)
+#define LGXREG		__REG_SEL(3, 2)
+
+#define PREG_L		__REG_SEL(lc, lc)
+#define PREG_S		__REG_SEL(sc, sc)
+#define SZPREG		__REG_SEL(16, 8)
+#define LGPREG		__REG_SEL(4, 3)
+
+#define PC_PTR_L	__ASM_STR(llc)
+#define PTR_L		__ASM_STR(lgc)
+
+#define PTR_REG		"C"
+
+#if __SIZEOF_POINTER__ == 16
+#ifdef __ASSEMBLER__
+#define RISCV_PTR		.chericap
+#define RISCV_SZPTR		16
+#define RISCV_LGPTR		4
+
+#define RISCV_ADDR		.dword
+#define RISCV_SZADDR		8
+#define RISCV_LGADDR		3
+#else /* !__ASSEMBLER__ */
+#define RISCV_PTR		".chericap"
+#define RISCV_SZPTR		"16"
+#define RISCV_LGPTR		"4"
+
+#define RISCV_ADDR		".dword"
+#define RISCV_SZADDR		"8"
+#define RISCV_LGADDR		"3"
+#endif /* !__ASSEMBLER__ */
+#elif __SIZEOF_POINTER__ == 8
+#ifdef __ASSEMBLER__
+#define RISCV_PTR		.chericap
+#define RISCV_SZPTR		8
+#define RISCV_LGPTR		3
+
+#define RISCV_ADDR		.word
+#define RISCV_SZADDR		4
+#define RISCV_LGADDR		2
+#else /* !__ASSEMBLER__ */
+#define RISCV_PTR		".chericap"
+#define RISCV_SZPTR		"8"
+#define RISCV_LGPTR		"3"
+
+#define RISCV_ADDR		".word"
+#define RISCV_SZADDR		"4"
+#define RISCV_LGADDR		"2"
+#endif /* !__ASSEMBLER__ */
+#else /* !__SIZEOF_POINTER__ */
+#error "Unexpected __SIZEOF_POINTER__"
+#endif /* !__SIZEOF_POINTER__ */
+
+#else  /* !defined(__CHERI_PURE_CAPABILITY__) */
 #define REG_L		__REG_SEL(ld, lw)
 #define REG_S		__REG_SEL(sd, sw)
 #define SZREG		__REG_SEL(8, 4)
 #define LGREG		__REG_SEL(3, 2)
+
+#define XREG_L		__REG_SEL(ld, lw)
+#define XREG_S		__REG_SEL(sd, sw)
+#define SZXREG		__REG_SEL(8, 4)
+#define LGXREG		__REG_SEL(3, 2)
+
+#define PREG_L		__REG_SEL(ld, lw)
+#define PREG_S		__REG_SEL(sd, sw)
+#define SZPREG		__REG_SEL(8, 4)
+#define LGPREG		__REG_SEL(3, 2)
+
+#define PC_PTR_L	__ASM_STR(lla)
+#define PTR_L		__ASM_STR(lla)
+
+#define PTR_REG		"r"
 
 #if __SIZEOF_POINTER__ == 8
 #ifdef __ASSEMBLER__
 #define RISCV_PTR		.dword
 #define RISCV_SZPTR		8
 #define RISCV_LGPTR		3
-#else
+
+#define RISCV_ADDR		.dword
+#define RISCV_SZADDR		8
+#define RISCV_LGADDR		3
+#else /* !__ASSEMBLER__ */
 #define RISCV_PTR		".dword"
 #define RISCV_SZPTR		"8"
 #define RISCV_LGPTR		"3"
-#endif
+
+#define RISCV_ADDR		".dword"
+#define RISCV_SZADDR		"8"
+#define RISCV_LGADDR		"3"
+#endif /* !__ASSEMBLER__ */
 #elif __SIZEOF_POINTER__ == 4
 #ifdef __ASSEMBLER__
 #define RISCV_PTR		.word
 #define RISCV_SZPTR		4
 #define RISCV_LGPTR		2
-#else
+
+#define RISCV_ADDR		.word
+#define RISCV_SZADDR		4
+#define RISCV_LGADDR		2
+#else /* !__ASSEMBLER__ */
 #define RISCV_PTR		".word"
 #define RISCV_SZPTR		"4"
 #define RISCV_LGPTR		"2"
-#endif
-#else
+
+#define RISCV_ADDR		".word"
+#define RISCV_SZADDR		"4"
+#define RISCV_LGADDR		"2"
+#endif /* !__ASSEMBLER__ */
+#else /* !__SIZEOF_POINTER__ */
 #error "Unexpected __SIZEOF_POINTER__"
+#endif /* !__SIZEOF_POINTER__ */
+#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+
+#if __SIZEOF_LONG__ == 8
+#define RISCV_LONG		__ASM_STR(.dword)
+#define RISCV_SZLONG		__ASM_STR(8)
+#define RISCV_LGLONG		__ASM_STR(3)
+#elif __SIZEOF_LONG__ == 4
+#define RISCV_LONG		__ASM_STR(.word)
+#define RISCV_SZLONG		__ASM_STR(4)
+#define RISCV_LGLONG		__ASM_STR(2)
+#else
+#error "Unexpected __SIZEOF_LONG__"
 #endif
+
 
 #if (__SIZEOF_INT__ == 4)
 #define RISCV_INT		__ASM_STR(.word)
