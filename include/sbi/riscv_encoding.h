@@ -213,6 +213,7 @@
 #define ENVCFG_PBMTE			(_ULL(1) << 62)
 #define ENVCFG_ADUE			(_ULL(1) << 61)
 #define ENVCFG_CDE			(_ULL(1) << 60)
+#define ENVCFG_CRE			(_UL(1) << 28)
 #define ENVCFG_CBZE			(_UL(1) << 7)
 #define ENVCFG_CBCFE			(_UL(1) << 6)
 #define ENVCFG_CBIE_SHIFT		4
@@ -722,6 +723,8 @@
 #define MSECCFG_MMWP			(_UL(1) << MSECCFG_MMWP_SHIFT)
 #define MSECCFG_RLB_SHIFT		(2)
 #define MSECCFG_RLB			(_UL(1) << MSECCFG_RLB_SHIFT)
+#define MSECCFG_CRE_SHIFT		(3)
+#define MSECCFG_CRE			(_UL(1) << MSECCFG_CRE_SHIFT)
 #define MSECCFG_USEED_SHIFT		(8)
 #define MSECCFG_USEED			(_UL(1) << MSECCFG_USEED_SHIFT)
 #define MSECCFG_SSEED_SHIFT		(9)

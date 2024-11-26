@@ -36,6 +36,13 @@
 	.globl _start
 	.globl _start_warm
 _start:
+#if defined(__riscv_zcherihybrid)
+	/* Enable the capability instruction even it's not in purecap mode */
+	/* as the compiler may use the capability instruction to optimize  */
+	/* the code when -march=zcherihybrid.                              */
+	csrs CSR_MSECCFG, MSECCFG_CRE
+#endif /* defined(__riscv_zcherihybrid) */
+
 	/* Find preferred boot HART id */
 	MOV_3R	s0, a0, s1, a1, s2, a2
 	call	fw_boot_hart
