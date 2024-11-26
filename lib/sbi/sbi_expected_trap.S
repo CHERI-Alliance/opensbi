@@ -33,7 +33,7 @@ __sbi_expected_trap:
 	REG_S	zero, SBI_TRAP_INFO_OFFSET(tinst)(a3)
 	REG_S	zero, SBI_TRAP_INFO_OFFSET(gva)(a3)
 	csrr	a4, CSR_MEPC
-	addi	a4, a4, 4
+	add	a4, a4, 4
 	csrw	CSR_MEPC, a4
 	mret
 
@@ -64,6 +64,6 @@ __sbi_expected_trap_hext:
 	REG_S	a4, SBI_TRAP_INFO_OFFSET(gva)(a3)
 
 	csrr	a4, CSR_MEPC
-	addi	a4, a4, 4
+	add	a4, a4, 4
 	csrw	CSR_MEPC, a4
 	mret
