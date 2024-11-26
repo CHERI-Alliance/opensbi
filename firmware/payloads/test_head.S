@@ -7,21 +7,8 @@
  *   Anup Patel <anup.patel@wdc.com>
  */
 
+#include <sbi/riscv_asm.h>
 #include <sbi/riscv_encoding.h>
-#define __ASM_STR(x)	x
-
-#if __riscv_xlen == 64
-#define __REG_SEL(a, b)		__ASM_STR(a)
-#define RISCV_PTR		.dword
-#elif __riscv_xlen == 32
-#define __REG_SEL(a, b)		__ASM_STR(b)
-#define RISCV_PTR		.word
-#else
-#error "Unexpected __riscv_xlen"
-#endif
-
-#define REG_L		__REG_SEL(ld, lw)
-#define REG_S		__REG_SEL(sd, sw)
 
 	.section .entry, "ax", %progbits
 	.align 3
