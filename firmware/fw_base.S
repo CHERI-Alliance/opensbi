@@ -77,7 +77,7 @@ _try_lottery:
 	REG_S	t5, 0(t3)		/* store runtime address to the GOT entry */
 
 3:
-	addi	t0, t0, (REGBYTES * 3)
+	add	t0, t0, (REGBYTES * 3)
 	blt	t0, t1, 2b
 _relocate_done:
 	/* At this point we are running from link address */
