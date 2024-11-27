@@ -6,6 +6,7 @@
  */
 
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/riscv_barrier.h>
 #include <sbi/riscv_encoding.h>
 #include <sbi/riscv_locks.h>
@@ -917,7 +918,13 @@ int sbi_sse_read_attrs(uint32_t event_id, uint32_t base_attr_id,
 	 * them all at once.
 	 */
 	e_attrs = (unsigned long *)&e->attrs;
+#if defined(__CHERI_PURE_CAPABILITY__)
+	attrs = (unsigned long *)cheri_build_cap_rw(output_phys_lo,
+						    sizeof(unsigned long) * attr_count);
+#else
 	attrs = (unsigned long *)output_phys_lo;
+#endif
+
 	copy_attrs(attrs, &e_attrs[base_attr_id], attr_count);
 
 	sbi_hart_unmap_saddr();
@@ -933,7 +940,12 @@ static int sse_write_attrs(struct sbi_sse_event *e, uint32_t base_attr_id,
 	int ret = 0;
 	unsigned long attr = 0, val;
 	uint32_t id, end_id = base_attr_id + attr_count;
+#if defined(__CHERI_PURE_CAPABILITY__)
+	unsigned long *attrs =
+		(unsigned long *)cheri_build_cap_r(input_phys, sizeof(unsigned long) * attr_count);
+#else
 	unsigned long *attrs = (unsigned long *)input_phys;
+#endif
 
 	sbi_hart_map_saddr(input_phys, sizeof(unsigned long) * attr_count);
 
