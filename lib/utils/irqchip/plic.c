@@ -264,7 +264,8 @@ int plic_cold_irqchip_init(struct plic_data *plic)
 
 	plic_delegate(plic);
 
-	ret = sbi_domain_root_add_memrange(plic->addr, plic->size, BIT(20),
+	ret = sbi_domain_root_add_memrange((unsigned long)plic->addr,
+					plic->size, BIT(20),
 					(SBI_DOMAIN_MEMREGION_MMIO |
 					 SBI_DOMAIN_MEMREGION_SHARED_SURW_MRW));
 	if (ret)

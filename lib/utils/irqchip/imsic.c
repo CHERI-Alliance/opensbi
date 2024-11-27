@@ -321,7 +321,7 @@ int imsic_data_check(struct imsic_data *imsic)
 		return SBI_EINVAL;
 
 	/* Match patter of each regset */
-	base_addr = imsic->regs[0].addr;
+	base_addr = (unsigned long)imsic->regs[0].addr;
 	base_addr &= ~((1UL << (imsic->guest_index_bits +
 				 imsic->hart_index_bits +
 				 IMSIC_MMIO_PAGE_SHIFT)) - 1);
@@ -333,7 +333,7 @@ int imsic_data_check(struct imsic_data *imsic)
 		if (imsic->regs[i].size & mask)
 			return SBI_EINVAL;
 
-		addr = imsic->regs[i].addr;
+		addr = (unsigned long)imsic->regs[i].addr;
 		addr &= ~((1UL << (imsic->guest_index_bits +
 					 imsic->hart_index_bits +
 					 IMSIC_MMIO_PAGE_SHIFT)) - 1);
@@ -380,7 +380,7 @@ int imsic_cold_irqchip_init(struct imsic_data *imsic)
 
 	/* Add IMSIC regions to the root domain */
 	for (i = 0; i < IMSIC_MAX_REGS && imsic->regs[i].size; i++) {
-		rc = sbi_domain_root_add_memrange(imsic->regs[i].addr,
+		rc = sbi_domain_root_add_memrange((unsigned long)imsic->regs[i].addr,
 						  imsic->regs[i].size,
 						  IMSIC_MMIO_PAGE_SZ,
 						  SBI_DOMAIN_MEMREGION_MMIO |

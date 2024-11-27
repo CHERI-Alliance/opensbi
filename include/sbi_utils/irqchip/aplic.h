@@ -35,7 +35,7 @@ struct aplic_data {
 	struct sbi_irqchip_device irqchip;
 	struct sbi_dlist node;
 	/* Public members */
-	unsigned long addr;
+	void *addr;
 	unsigned long size;
 	unsigned long num_idc;
 	unsigned long num_source;
