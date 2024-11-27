@@ -15,37 +15,48 @@
 /* clang-format off */
 
 /** Offset of fw_start member in sbi_scratch */
-#define SBI_SCRATCH_FW_START_OFFSET		(0 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_FW_START_OFFSET		(0 * __SIZEOF_LONG__ + 0 * __SIZEOF_POINTER__)
 /** Offset of fw_size member in sbi_scratch */
-#define SBI_SCRATCH_FW_SIZE_OFFSET		(1 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_FW_SIZE_OFFSET		(1 * __SIZEOF_LONG__ + 0 * __SIZEOF_POINTER__)
 /** Offset (in sbi_scratch) of the R/W Offset */
-#define SBI_SCRATCH_FW_RW_OFFSET		(2 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_FW_RW_OFFSET		(2 * __SIZEOF_LONG__ + 0 * __SIZEOF_POINTER__)
 /** Offset of fw_heap_offset member in sbi_scratch */
-#define SBI_SCRATCH_FW_HEAP_OFFSET		(3 * __SIZEOF_POINTER__)
-/** Offset of fw_heap_size member in sbi_scratch */
-#define SBI_SCRATCH_FW_HEAP_SIZE_OFFSET		(4 * __SIZEOF_POINTER__)
-/** Offset of next_arg1 member in sbi_scratch */
-#define SBI_SCRATCH_NEXT_ARG1_OFFSET		(5 * __SIZEOF_POINTER__)
-/** Offset of next_addr member in sbi_scratch */
-#define SBI_SCRATCH_NEXT_ADDR_OFFSET		(6 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_FW_HEAP_OFFSET		(3 * __SIZEOF_LONG__ + 0 * __SIZEOF_POINTER__)
+/** Offset of fw_heap_size_offset member in sbi_scratch */
+#define SBI_SCRATCH_FW_HEAP_SIZE_OFFSET		(4 * __SIZEOF_LONG__ + 0 * __SIZEOF_POINTER__)
 /** Offset of next_mode member in sbi_scratch */
-#define SBI_SCRATCH_NEXT_MODE_OFFSET		(7 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_NEXT_MODE_OFFSET		(5 * __SIZEOF_LONG__ + 0 * __SIZEOF_POINTER__)
+/** Offset of next_arg1 member in sbi_scratch */
+#define SBI_SCRATCH_NEXT_ARG1_OFFSET		(6 * __SIZEOF_LONG__ + 0 * __SIZEOF_POINTER__)
+/** Offset of next_addr member in sbi_scratch */
+#define SBI_SCRATCH_NEXT_ADDR_OFFSET		(6 * __SIZEOF_LONG__ + 1 * __SIZEOF_POINTER__)
 /** Offset of warmboot_addr member in sbi_scratch */
-#define SBI_SCRATCH_WARMBOOT_ADDR_OFFSET	(8 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_WARMBOOT_ADDR_OFFSET	(6 * __SIZEOF_LONG__ + 2 * __SIZEOF_POINTER__)
 /** Offset of platform_addr member in sbi_scratch */
-#define SBI_SCRATCH_PLATFORM_ADDR_OFFSET	(9 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_PLATFORM_ADDR_OFFSET	(6 * __SIZEOF_LONG__ + 3 * __SIZEOF_POINTER__)
 /** Offset of hartid_to_scratch member in sbi_scratch */
-#define SBI_SCRATCH_HARTID_TO_SCRATCH_OFFSET	(10 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_HARTID_TO_SCRATCH_OFFSET	(6 * __SIZEOF_LONG__ + 4 * __SIZEOF_POINTER__)
 /** Offset of trap_context member in sbi_scratch */
-#define SBI_SCRATCH_TRAP_CONTEXT_OFFSET		(11 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_TRAP_CONTEXT_OFFSET		(6 * __SIZEOF_LONG__ + 5 * __SIZEOF_POINTER__)
 /** Offset of tmp0 member in sbi_scratch */
-#define SBI_SCRATCH_TMP0_OFFSET			(12 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_TMP0_OFFSET			(6 * __SIZEOF_LONG__ + 6 * __SIZEOF_POINTER__)
+#if defined(__CHERI_PURE_CAPABILITY__)
+/** Offset of stack member in sbi_scratch */
+#define SBI_SCRATCH_STACK_OFFSET		(6 * __SIZEOF_LONG__ + 7 * __SIZEOF_POINTER__)
 /** Offset of options member in sbi_scratch */
-#define SBI_SCRATCH_OPTIONS_OFFSET		(13 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_OPTIONS_OFFSET		(6 * __SIZEOF_LONG__ + 8 * __SIZEOF_POINTER__)
 /** Offset of hartindex member in sbi_scratch */
-#define SBI_SCRATCH_HARTINDEX_OFFSET		(14 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_HARTINDEX_OFFSET	(7 * __SIZEOF_LONG__ + 8 * __SIZEOF_POINTER__)
 /** Offset of extra space in sbi_scratch */
-#define SBI_SCRATCH_EXTRA_SPACE_OFFSET		(15 * __SIZEOF_POINTER__)
+#define SBI_SCRATCH_EXTRA_SPACE_OFFSET		(8 * __SIZEOF_LONG__ + 8 * __SIZEOF_POINTER__)
+#else
+/** Offset of options member in sbi_scratch */
+#define SBI_SCRATCH_OPTIONS_OFFSET		(6 * __SIZEOF_LONG__ + 7 * __SIZEOF_POINTER__)
+/** Offset of hartindex member in sbi_scratch */
+#define SBI_SCRATCH_HARTINDEX_OFFSET		(7 * __SIZEOF_LONG__ + 7 * __SIZEOF_POINTER__)
+/** Offset of extra space in sbi_scratch */
+#define SBI_SCRATCH_EXTRA_SPACE_OFFSET		(8 * __SIZEOF_LONG__ + 7 * __SIZEOF_POINTER__)
+#endif
 /** Maximum size of sbi_scratch (4KB) */
 #define SBI_SCRATCH_SIZE			(0x1000)
 
@@ -67,22 +78,26 @@ struct sbi_scratch {
 	unsigned long fw_heap_offset;
 	/** Size (in bytes) of the heap area */
 	unsigned long fw_heap_size;
-	/** Arg1 (or 'a1' register) of next booting stage for this HART */
-	unsigned long next_arg1;
-	/** Address of next booting stage for this HART */
-	unsigned long next_addr;
 	/** Privilege mode of next booting stage for this HART */
 	unsigned long next_mode;
+	/** Arg1 (or 'a1' register) of next booting stage for this HART */
+	uintptr_t next_arg1;
+	/** Address of next booting stage for this HART */
+	uintptr_t next_addr;
 	/** Warm boot entry point address for this HART */
-	unsigned long warmboot_addr;
+	uintptr_t warmboot_addr;
 	/** Address of sbi_platform */
-	unsigned long platform_addr;
+	uintptr_t platform_addr;
 	/** Address of HART ID to sbi_scratch conversion function */
-	unsigned long hartid_to_scratch;
+	uintptr_t hartid_to_scratch;
 	/** Address of current trap context */
-	unsigned long trap_context;
+	uintptr_t trap_context;
 	/** Temporary storage */
-	unsigned long tmp0;
+	uintptr_t tmp0;
+#if defined(__CHERI_PURE_CAPABILITY__)
+	/** Stack */
+	uintptr_t stack;
+#endif
 	/** Options for OpenSBI library */
 	unsigned long options;
 	/** Index of the hart */
@@ -106,6 +121,9 @@ assert_member_offset(struct sbi_scratch, platform_addr, SBI_SCRATCH_PLATFORM_ADD
 assert_member_offset(struct sbi_scratch, hartid_to_scratch, SBI_SCRATCH_HARTID_TO_SCRATCH_OFFSET);
 assert_member_offset(struct sbi_scratch, trap_context, SBI_SCRATCH_TRAP_CONTEXT_OFFSET);
 assert_member_offset(struct sbi_scratch, tmp0, SBI_SCRATCH_TMP0_OFFSET);
+#if defined(__CHERI_PURE_CAPABILITY__)
+assert_member_offset(struct sbi_scratch, stack, SBI_SCRATCH_STACK_OFFSET);
+#endif
 assert_member_offset(struct sbi_scratch, options, SBI_SCRATCH_OPTIONS_OFFSET);
 assert_member_offset(struct sbi_scratch, hartindex, SBI_SCRATCH_HARTINDEX_OFFSET);
 
