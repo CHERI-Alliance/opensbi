@@ -7,6 +7,7 @@
  *   Anup Patel<apatel@ventanamicro.com>
  */
 
+#include <sbi/riscv_cheri.h>
 #include <sbi/riscv_locks.h>
 #include <sbi/sbi_error.h>
 #include <sbi/sbi_heap.h>
@@ -55,7 +56,11 @@ static bool alloc_nodes(struct sbi_heap_control *hpctrl)
 				sbi_list_del(&n->head);
 				sbi_list_add_tail(&n->head, &hpctrl->free_node_list);
 			}
+#if defined(__CHERI_PURE_CAPABILITY__)
+			new = (void *)cheri_build_cap_rw(n->addr + n->size, size);
+#else
 			new = (void *)(n->addr + n->size);
+#endif
 			break;
 		}
 	}
@@ -129,8 +134,11 @@ static void *alloc_with_align(struct sbi_heap_control *hpctrl,
 
 	sbi_list_del(&np->head);
 	sbi_list_add_tail(&np->head, &hpctrl->used_space_list);
+#if defined(__CHERI_PURE_CAPABILITY__)
+	ret = cheri_build_cap_rw(np->addr, np->size);
+#else
 	ret = (void *)np->addr;
-
+#endif
 out:
 	spin_unlock(&hpctrl->lock);
 
