@@ -46,7 +46,11 @@ typedef unsigned long long	uint64_t;
 
 typedef int			bool;
 typedef unsigned long		ulong;
+#if defined(__CHERI_PURE_CAPABILITY__)
+typedef __uintcap_t		uintptr_t;
+#else
 typedef unsigned long		uintptr_t;
+#endif
 typedef unsigned long		size_t;
 typedef long			ssize_t;
 typedef unsigned long		virtual_addr_t;
