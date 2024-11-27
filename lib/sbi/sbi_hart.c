@@ -160,6 +160,11 @@ static void mstatus_init(struct sbi_scratch *scratch)
 		}
 	}
 
+#if defined(__riscv_zcherihybrid)
+	if (misa_extension('S'))
+		csr_set(CSR_MENVCFG, ENVCFG_CRE);
+#endif
+
 	/* Disable all interrupts */
 	csr_write(CSR_MIE, 0);
 
@@ -223,6 +228,10 @@ static int delegate_traps(struct sbi_scratch *scratch)
 		exceptions |= (1U << CAUSE_VIRTUAL_INST_FAULT);
 		exceptions |= (1U << CAUSE_STORE_GUEST_PAGE_FAULT);
 	}
+
+#if __has_feature(capabilities)
+	exceptions |= 1U << CAUSE_CHERI_FAULT;
+#endif
 
 	csr_write(CSR_MIDELEG, interrupts);
 	csr_write(CSR_MEDELEG, exceptions);
@@ -1036,8 +1045,8 @@ void __attribute__((noreturn)) sbi_hart_hang(void)
 }
 
 void __attribute__((noreturn))
-sbi_hart_switch_mode(unsigned long arg0, unsigned long arg1,
-		     unsigned long next_addr, unsigned long next_mode,
+sbi_hart_switch_mode(uintptr_t arg0, uintptr_t arg1,
+		     uintptr_t next_addr, unsigned long next_mode,
 		     bool next_virt)
 {
 #if __riscv_xlen == 32
@@ -1097,8 +1106,41 @@ sbi_hart_switch_mode(unsigned long arg0, unsigned long arg1,
 		}
 	}
 
-	register unsigned long a0 asm("a0") = arg0;
-	register unsigned long a1 asm("a1") = arg1;
-	__asm__ __volatile__("mret" : : "r"(a0), "r"(a1));
+	register uintptr_t a0 asm(REG(a0)) = arg0;
+	register uintptr_t a1 asm(REG(a1)) = arg1;
+#if defined(__riscv_zcheripurecap)
+	__asm__ __volatile__(
+		"mv cra, cnull\n"
+		"mv csp, cnull\n"
+		"mv cgp, cnull\n"
+		"mv ctp, cnull\n"
+		"mv ct0, cnull\n"
+		"mv ct1, cnull\n"
+		"mv ct2, cnull\n"
+		"mv cs0, cnull\n"
+		"mv cs1, cnull\n"
+		"mv ca2, cnull\n"
+		"mv ca3, cnull\n"
+		"mv ca4, cnull\n"
+		"mv ca5, cnull\n"
+		"mv ca6, cnull\n"
+		"mv ca7, cnull\n"
+		"mv cs2, cnull\n"
+		"mv cs3, cnull\n"
+		"mv cs4, cnull\n"
+		"mv cs5, cnull\n"
+		"mv cs6, cnull\n"
+		"mv cs7, cnull\n"
+		"mv cs8, cnull\n"
+		"mv cs9, cnull\n"
+		"mv cs10, cnull\n"
+		"mv cs11, cnull\n"
+		"mv ct3, cnull\n"
+		"mv ct4, cnull\n"
+		"mv ct5, cnull\n"
+		"mv ct6, cnull\n"
+	    : : PTR_REG(a0), PTR_REG(a1));  
+#endif
+	__asm__ __volatile__("mret" : : PTR_REG(a0), PTR_REG(a1));
 	__builtin_unreachable();
 }

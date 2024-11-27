@@ -140,8 +140,8 @@ void sbi_hart_get_extensions_str(struct sbi_scratch *scratch,
 void __attribute__((noreturn)) sbi_hart_hang(void);
 
 void __attribute__((noreturn))
-sbi_hart_switch_mode(unsigned long arg0, unsigned long arg1,
-		     unsigned long next_addr, unsigned long next_mode,
+sbi_hart_switch_mode(uintptr_t arg0, uintptr_t arg1,
+		     uintptr_t next_addr, unsigned long next_mode,
 		     bool next_virt);
 
 #endif
