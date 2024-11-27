@@ -21,11 +21,11 @@ struct sbi_context {
 	/** Supervisor interrupt enable register */
 	unsigned long sie;
 	/** Supervisor trap vector base address register */
-	unsigned long stvec;
+	uintptr_t stvec;
 	/** Supervisor scratch register for temporary storage */
-	unsigned long sscratch;
+	uintptr_t sscratch;
 	/** Supervisor exception program counter register */
-	unsigned long sepc;
+	uintptr_t sepc;
 	/** Supervisor cause register */
 	unsigned long scause;
 	/** Supervisor trap value register */
