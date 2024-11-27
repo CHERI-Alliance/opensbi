@@ -21,6 +21,7 @@
 
 	.align 3
 	.global __sbi_expected_trap
+	.type 	__sbi_expected_trap, @function
 __sbi_expected_trap:
 	/* Without H-extension so, MTVAL2 and MTINST CSRs and GVA not available */
 	csrr	a4, CSR_MCAUSE
@@ -34,9 +35,11 @@ __sbi_expected_trap:
 	add	PREG(a4), PREG(a4), 4
 	csrw	CSR_MEPC, PREG(a4)
 	mret
+	.size __sbi_expected_trap, . - __sbi_expected_trap
 
 	.align 3
 	.global __sbi_expected_trap_hext
+	.type 	__sbi_expected_trap_hext, @function
 __sbi_expected_trap_hext:
 	/* With H-extension so, MTVAL2 and MTINST CSRs and GVA available */
 	csrr	a4, CSR_MCAUSE
@@ -63,3 +66,4 @@ __sbi_expected_trap_hext:
 	add	PREG(a4), PREG(a4), 4
 	csrw	CSR_MEPC, PREG(a4)
 	mret
+	.size __sbi_expected_trap_hext, . - __sbi_expected_trap_hext

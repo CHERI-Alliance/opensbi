@@ -8,6 +8,7 @@
  */
 
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/riscv_encoding.h>
 #include <sbi/riscv_elf.h>
 #include <sbi/sbi_platform.h>
@@ -18,35 +19,58 @@
 #define BOOT_STATUS_BOOT_HART_DONE	2
 
 .macro	MOV_3R __d0, __s0, __d1, __s1, __d2, __s2
-	add	\__d0, \__s0, zero
-	add	\__d1, \__s1, zero
-	add	\__d2, \__s2, zero
+	mv	\__d0, \__s0
+	mv	\__d1, \__s1
+	mv	\__d2, \__s2
 .endm
 
 .macro	MOV_5R __d0, __s0, __d1, __s1, __d2, __s2, __d3, __s3, __d4, __s4
-	add	\__d0, \__s0, zero
-	add	\__d1, \__s1, zero
-	add	\__d2, \__s2, zero
-	add	\__d3, \__s3, zero
-	add	\__d4, \__s4, zero
+	mv	\__d0, \__s0
+	mv	\__d1, \__s1
+	mv	\__d2, \__s2
+	mv	\__d3, \__s3
+	mv	\__d4, \__s4
 .endm
 
 	.section .entry, "ax", %progbits
 	.align 3
 	.globl _start
 	.globl _start_warm
+	.type  _start_warm, @function
 _start:
 #if defined(__riscv_zcherihybrid)
 	/* Enable the capability instruction even it's not in purecap mode */
 	/* as the compiler may use the capability instruction to optimize  */
 	/* the code when -march=zcherihybrid.                              */
 	csrs CSR_MSECCFG, MSECCFG_CRE
+
+#if defined(__CHERI_PURE_CAPABILITY__)
+	modesw.cap
+#endif /* defined(__CHERI_PURE_CAPABILITY__) */
 #endif /* defined(__riscv_zcherihybrid) */
+
+#if defined(__CHERI_PURE_CAPABILITY__)
+	/* Initialize the ca3 as infinite capability */
+	auipc 	PREG(a3), 0
+#if defined(__riscv_zcherihybrid)
+	/* Set default infinite capability in integer pointer mode */
+	/* and the offset to zero.                                 */
+	scaddr	PREG(a3), PREG(a3), zero
+	li	t0, 1
+	scmode	PREG(a3), PREG(a3), t0
+#endif
+	PC_PTR_L	PREG(t0), cheri_infinite_cap
+	PREG_S		PREG(a3), 0(PREG(t0))
+
+	/* Convert FDT pointer from integer to capability */
+	scaddr	PREG(a1), PREG(a3), a1
+	scaddr	PREG(a2), PREG(a3), a2
+#endif
 
 	/* Find preferred boot HART id */
 	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 	call	fw_boot_hart
-	add	a6, a0, zero
+	mv	a6, a0
 	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	li	a7, -1
 	beq	a6, a7, _try_lottery
@@ -54,17 +78,91 @@ _start:
 	bne	a0, a6, _wait_for_boot_hart
 _try_lottery:
 	/* Jump to relocation wait loop if we don't get relocation lottery */
-	PTR_L	PREG(a6), _boot_status
+	PC_PTR_L	PREG(a6), _boot_status
 	li	a7, BOOT_STATUS_LOTTERY_DONE
 	amoswap.w a6, a7, (PREG(a6))
 	bnez	a6, _wait_for_boot_hart
 
 	/* relocate the global table content */
 	li	t0, FW_TEXT_START	/* link start */
-	PTR_L	PREG(t1), _fw_start		/* load start */
+	PC_PTR_L	PREG(t1), _fw_start	/* load start */
 	sub	t2, t1, t0		/* load offset */
-	PTR_L	PREG(t0), __rel_dyn_start
-	PTR_L	PREG(t1), __rel_dyn_end
+#if defined(__CHERI_PURE_CAPABILITY__)
+	/* initialize cap table before executing c functions */
+cheri_cap_init:
+	PC_PTR_L	PREG(t0), __cap_relocs_start
+	PC_PTR_L	PREG(t1), __cap_relocs_end
+	beq		t0, t1, _relocate_done
+
+2:	XREG_L	t3, 0(PREG(t0))	/* t3 <-- capreloc:capability_location */
+	add	t3, t3, t2
+	scaddr	PREG(t3), PREG(a3), t3 	/* t3 <-- W permission capability points to capability */
+	XREG_L	t4, SZXREG(PREG(t0))	/* t4 <-- capreloc:capability_base */
+	bnez	t4, 3f		/* write cnull if capreloc:capability_base is zero */
+	j	10f		/* Initialize next capability */
+
+3:	/* Set address/base */
+	add	t4, t4, t2
+	scaddr	PREG(t5), PREG(a3), t4 	/* t5 <-- Set base from a Infinite capability */
+
+#if defined(__riscv_zcherihybrid)
+	/* Set M-bit for all capability as purecap mode */
+	scmode	PREG(t5), PREG(t5), zero
+#endif /* defined(__riscv_zcherihybrid) */
+
+	/* Do not set tight bounds for functions for default setting -cheri-cap-table-abi=pcrel  */
+	XREG_L	t4, (SZXREG * 4)(PREG(t0))	/* t4 <-- capreloc:capability_flags */
+	li	t6, CAP_RELOC_CR_FLAG_FUNC
+	and	t6, t6, t4
+	bnez	t6, 4f
+
+	/* Set bounds */
+	XREG_L	t4, (SZXREG * 3)(PREG(t0))	/* t4 <-- capreloc:capability_length */
+	beqz	t4,	4f		/* unlimited bounds if the capability_length is zero */
+	scbndsr	PREG(t5), PREG(t5), t4
+
+4:	/* Set offset */
+	XREG_L	t4, (SZXREG * 2)(PREG(t0))	/* t4 <-- capreloc:capability_offset */
+	add	PREG(t5), PREG(t5), t4
+
+5:	/* Set permission */
+	XREG_L	t4, (SZXREG * 4)(PREG(t0))	/* t4 <-- capreloc:capability_flags */
+	bnez	t4, 6f
+	li t6,	CHERI_PERM_DATA		/* read-write data */
+	acperm	PREG(t5), PREG(t5), t6
+	j	9f
+6:	li	t6, CAP_RELOC_CR_FLAG_CONST
+	and	t6, t6, t4
+	beqz	t6, 7f
+	li t6,	CHERI_PERM_R_DATA	/* read only data */
+	acperm	PREG(t5), PREG(t5), t6
+	j	9f
+
+7:	li	t6, CAP_RELOC_CR_FLAG_FUNC
+	and	t6, t6, t4
+	beqz	t6, 9f
+	li t6,	CHERI_PERM_EXECUTABLE	/* function pointer */
+	acperm	PREG(t5), PREG(t5), t6
+
+	/* Seal entry */
+	/* Only seal the function whcih is not used for exception handler */
+	PC_PTR_L	PREG(t6), __sbi_expected_trap
+	beq		t5, t6, 9f
+	PC_PTR_L	PREG(t6), __sbi_expected_trap_hext
+	beq		t5, t6, 9f
+	PC_PTR_L	PREG(t6), _trap_handler
+	beq		t5, t6, 9f
+	PC_PTR_L	PREG(t6), _trap_handler_hyp
+	beq		t5, t6, 9f
+	sentry	PREG(t5), PREG(t5)
+9:
+	PREG_S	PREG(t5), 0(PREG(t3))
+10:
+	add	PREG(t0), PREG(t0), (SZXREG * 5)
+	blt	t0, t1, 2b
+#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+	PC_PTR_L	PREG(t0), __rel_dyn_start
+	PC_PTR_L	PREG(t1), __rel_dyn_end
 	beq	t0, t1, _relocate_done
 2:
 	XREG_L	t5, SZXREG(PREG(t0))	/* t5 <-- relocation info:type */
@@ -79,6 +177,7 @@ _try_lottery:
 3:
 	add	PREG(t0), PREG(t0), (REGBYTES * 3)
 	blt	t0, t1, 2b
+#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
 _relocate_done:
 	/* At this point we are running from link address */
 
@@ -87,20 +186,26 @@ _relocate_done:
 	call	_reset_regs
 
 	/* Zero-out BSS */
-	PTR_L	PREG(s4), _bss_start
-	PTR_L	PREG(s5), _bss_end
+	PC_PTR_L	PREG(s4), _bss_start
+	PC_PTR_L	PREG(s5), _bss_end
 _bss_zero:
 	REG_S	REG_ZERO, (PREG(s4))
 	add	PREG(s4), PREG(s4), SZREG
 	blt	s4, s5, _bss_zero
 
 	/* Setup temporary trap handler */
-	PTR_L	PREG(s4), _start_hang
+	PC_PTR_L	PREG(s4), _start_hang
 	csrw	CSR_MTVEC, PREG(s4)
 
 	/* Setup temporary stack */
-	PTR_L	PREG(s4), _fw_end
+	PC_PTR_L	PREG(s4), _fw_end
 	li	s5, (SBI_SCRATCH_SIZE * 2)
+#if defined(__CHERI_PURE_CAPABILITY__)
+	scaddr	PREG(s4), PREG(a3), s4
+	scbndsr	PREG(s4), PREG(s4), s5
+	li t0,	CHERI_PERM_STACK
+	acperm	PREG(s4), PREG(s4), t0
+#endif
 	add	PREG(sp), PREG(s4), s5
 
 	/* Allow main firmware to save info */
@@ -120,9 +225,9 @@ _bss_zero:
 	 */
 	MOV_5R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2), REG(s3), REG(a3), REG(s4), REG(a4)
 	call	fw_platform_init
-	add	t0, a0, zero
+	mv	REG(t0), REG(a0)
 	MOV_5R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2), REG(a3), REG(s3), REG(a4), REG(s4)
-	add	a1, t0, zero
+	mv	REG(a1), REG(t0)
 
 	/* Preload HART details
 	 * s7 -> HART Count
@@ -142,15 +247,15 @@ _bss_zero:
 #endif
 
 	/* Setup scratch space for all the HARTs*/
-	PTR_L	PREG(tp), _fw_end
+	PC_PTR_L	PREG(tp), _fw_end
 	mul	a5, s7, s8
 	add	PREG(tp), PREG(tp), a5
 	/* Setup heap base address */
-	PTR_L	PREG(s10), _fw_start
+	PC_PTR_L	PREG(s10), _fw_start
 	sub	s10, tp, s10
 	add	PREG(tp), PREG(tp), s9
 	/* Keep a copy of tp */
-	add	t3, tp, zero
+	mv	PREG(t3), PREG(tp)
 	/* Counter */
 	li	t2, 1
 	/* hartid 0 is mandated by ISA */
@@ -166,22 +271,41 @@ _scratch_init:
 	 * s9 -> Heap Size
 	 * s10 -> Heap Offset
 	 */
-	add	tp, t3, zero
+	mv	PREG(tp), PREG(t3)
 	sub	tp, tp, s9
 	mul	a5, s8, t1
 	sub	tp, tp, a5
 	li	a5, SBI_SCRATCH_SIZE
 	sub	tp, tp, a5
+#if defined(__CHERI_PURE_CAPABILITY__)
+	scaddr	PREG(tp), PREG(t3), tp	/* Initialize tp with the stored tp */
+	scbndsr PREG(tp), PREG(tp), a5	/* scratch bounds is SBI_SCRATCH_SIZE */
+	li t0,	CHERI_PERM_DATA	/* scratch is a read-write data */
+	acperm	PREG(tp), PREG(tp), t0
+
+	/*
+	 * Setup per hart stack for CHERI. Since CHERI capability stack pointer
+	 * is not same as scratch pad pointer as the bonds are different. It needs
+	 * another scratch field to store the stack pointer for CHERI.
+	 */
+	sub	a4, s8, a5	/* a4 <-- stack size (HART_STACK_SIZE - SBI_SCRATCH_SIZE) */
+	sub	a5, tp, a4	/* a5 <-- sp base */
+	scaddr	PREG(a5), PREG(a3), a5	/* Initialize a4 with infinite cap */
+	scbndsr PREG(a5), PREG(a5), a4	/* sp bounds is stack size */
+	acperm	PREG(a5), PREG(a5), t0	/* sp is a read-write data */
+	add	PREG(a5), PREG(a5), a4	/* Set a5 to sp top */
+	PREG_S	PREG(a5), SBI_SCRATCH_STACK_OFFSET(PREG(tp))
+#endif
 
 	/* Initialize scratch space */
 	/* Store fw_start and fw_size in scratch space */
-	PTR_L	PREG(a4), _fw_start
+	PC_PTR_L	PREG(a4), _fw_start
 	sub	a5, t3, a4
 	XREG_S	a4, SBI_SCRATCH_FW_START_OFFSET(PREG(tp))
 	XREG_S	a5, SBI_SCRATCH_FW_SIZE_OFFSET(PREG(tp))
 
 	/* Store R/W section's offset in scratch space */
-	PTR_L	PREG(a5), _fw_rw_start
+	PC_PTR_L	PREG(a5), _fw_rw_start
 	sub	a5, a5, a4
 	XREG_S	a5, SBI_SCRATCH_FW_RW_OFFSET(PREG(tp))
 
@@ -192,12 +316,12 @@ _scratch_init:
 	/* Store next arg1 in scratch space */
 	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 	call	fw_next_arg1
-	XREG_S	a0, SBI_SCRATCH_NEXT_ARG1_OFFSET(PREG(tp))
+	PREG_S	PREG(a0), SBI_SCRATCH_NEXT_ARG1_OFFSET(PREG(tp))
 	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	/* Store next address in scratch space */
 	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 	call	fw_next_addr
-	XREG_S	a0, SBI_SCRATCH_NEXT_ADDR_OFFSET(PREG(tp))
+	PREG_S	PREG(a0), SBI_SCRATCH_NEXT_ADDR_OFFSET(PREG(tp))
 	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	/* Store next mode in scratch space */
 	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
@@ -206,16 +330,16 @@ _scratch_init:
 	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	/* Store warm_boot address in scratch space */
 	PTR_L	PREG(a4), _start_warm
-	XREG_S	a4, SBI_SCRATCH_WARMBOOT_ADDR_OFFSET(PREG(tp))
+	PREG_S	PREG(a4), SBI_SCRATCH_WARMBOOT_ADDR_OFFSET(PREG(tp))
 	/* Store platform address in scratch space */
 	PTR_L	PREG(a4), platform
-	XREG_S	a4, SBI_SCRATCH_PLATFORM_ADDR_OFFSET(PREG(tp))
+	PREG_S	PREG(a4), SBI_SCRATCH_PLATFORM_ADDR_OFFSET(PREG(tp))
 	/* Store hartid-to-scratch function address in scratch space */
 	PTR_L	PREG(a4), _hartid_to_scratch
-	XREG_S	a4, SBI_SCRATCH_HARTID_TO_SCRATCH_OFFSET(PREG(tp))
+	PREG_S	PREG(a4), SBI_SCRATCH_HARTID_TO_SCRATCH_OFFSET(PREG(tp))
 	/* Clear trap_context and tmp0 in scratch space */
-	XREG_S	zero, SBI_SCRATCH_TRAP_CONTEXT_OFFSET(PREG(tp))
-	XREG_S	zero, SBI_SCRATCH_TMP0_OFFSET(PREG(tp))
+	PREG_S	PREG_NULL, SBI_SCRATCH_TRAP_CONTEXT_OFFSET(PREG(tp))
+	PREG_S	PREG_NULL, SBI_SCRATCH_TMP0_OFFSET(PREG(tp))
 	/* Store firmware options in scratch space */
 	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 #ifdef FW_OPTIONS
@@ -243,12 +367,12 @@ _scratch_init:
 	/* t1 = destination FDT start address */
 	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 	call	fw_next_arg1
-	add	t1, a0, zero
+	mv	PREG(t1), PREG(a0)
 	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	beqz	t1, _fdt_reloc_done
 	beq	t1, a1, _fdt_reloc_done
 	/* t0 = source FDT start address */
-	add	t0, a1, zero
+	mv	PREG(t0), PREG(a1)
 	/* t2 = source FDT size in big-endian */
 #if __riscv_xlen > 32
 	lwu	t2, 4(PREG(t0))
@@ -256,17 +380,17 @@ _scratch_init:
 	lw	t2, 4(PREG(t0))
 #endif
 	/* t3 = bit[15:8] of FDT size */
-	add	t3, t2, zero
+	mv	t3, t2
 	srli	t3, t3, 16
 	and	t3, t3, a4
 	slli	t3, t3, 8
 	/* t4 = bit[23:16] of FDT size */
-	add	t4, t2, zero
+	mv	t4, t2
 	srli	t4, t4, 8
 	and	t4, t4, a4
 	slli	t4, t4, 16
 	/* t5 = bit[31:24] of FDT size */
-	add	t5, t2, zero
+	mv	t5, t2
 	and	t5, t5, a4
 	slli	t5, t5, 24
 	/* t2 = bit[7:0] of FDT size */
@@ -298,7 +422,7 @@ _fdt_reloc_done:
 	/* waiting for boot hart to be done (_boot_status == 2) */
 _wait_for_boot_hart:
 	li	t0, BOOT_STATUS_BOOT_HART_DONE
-	PTR_L	PREG(t1), _boot_status
+	PC_PTR_L	PREG(t1), _boot_status
 	XREG_L	t1, 0(PREG(t1))
 	/* Reduce the bus traffic so that boot hart may proceed faster */
 	div	t2, t2, zero
@@ -345,19 +469,35 @@ _start_warm:
 3:	bge	s6, s7, _start_hang
 
 	/* Find the scratch space based on HART index */
-	PTR_L	PREG(tp), _fw_end
+	PC_PTR_L	PREG(tp), _fw_end
 	mul	a5, s7, s8
 	add	tp, tp, a5
 	mul	a5, s8, s6
 	sub	tp, tp, a5
 	li	a5, SBI_SCRATCH_SIZE
 	sub	tp, tp, a5
-
+#if defined(__CHERI_PURE_CAPABILITY__)
+	PC_PTR_L	PREG(t0), cheri_infinite_cap
+	PREG_L	PREG(t1), 0(PREG(t0))
+	scaddr	PREG(tp), PREG(t1), tp		/* Initialize tp with infinite cap */
+	scbndsr PREG(tp), PREG(tp), a5		/* scratch bounds is SBI_SCRATCH_SIZE */
+	li t0,	CHERI_PERM_DATA		/* scratch is a read-write data */
+	acperm	PREG(tp), PREG(tp), t0
+#endif
 	/* update the mscratch */
 	csrw	CSR_MSCRATCH, PREG(tp)
 
 	/* Setup stack */
+#if defined(__CHERI_PURE_CAPABILITY__)
+	sub	a5, s8, a5	/* a5 <-- stack size (HART_STACK_SIZE - SBI_SCRATCH_SIZE) */
+	sub	sp, tp, a5	/* Get sp base */
+	scaddr	PREG(sp), PREG(t1), sp		/* Initialize sp with infinite cap */
+	scbndsr PREG(sp), PREG(sp), a5		/* sp bounds is stack size */
+	acperm	PREG(sp), PREG(sp), t0		/* sp is a read-write data */
+	add	PREG(sp), PREG(sp), a5		/* Set sp to sp top */
+#else
 	add	PREG(sp), PREG(tp), zero
+#endif
 
 	/* Setup trap handler */
 	PTR_L	PREG(a4), _trap_handler
@@ -371,19 +511,28 @@ _skip_trap_handler_hyp:
 
 	/* Initialize SBI runtime */
 	csrr	PREG(a0), CSR_MSCRATCH
+#if defined(__CHERI_PURE_CAPABILITY__)
+	PTR_L	PREG(ra), sbi_init
+	jalr	PREG(ra)
+#else
 	call	sbi_init
+#endif
 
 	/* We don't expect to reach here hence just hang */
 	j	_start_hang
+	.size _start_warm, . - _start_warm
 
 	.data
 	.align 3
+	.type  _boot_status, @object
 _boot_status:
 	RISCV_LONG	0
+	.size _boot_status, . - _boot_status
 
 	.section .entry, "ax", %progbits
 	.align 3
 	.globl _hartid_to_scratch
+	.type  _hartid_to_scratch, @function
 _hartid_to_scratch:
 	/*
 	 * a0 -> HART ID (passed by caller)
@@ -402,11 +551,20 @@ _hartid_to_scratch:
 #endif
 	sub	t2, t2, a1
 	mul	t2, t2, t0
-	PTR_L	PREG(t1), _fw_end
+	PC_PTR_L	PREG(t1), _fw_end
 	add	t1, t1, t2
 	li	t2, SBI_SCRATCH_SIZE
 	sub	a0, t1, t2
+#if defined(__CHERI_PURE_CAPABILITY__)
+	PC_PTR_L	PREG(t0), cheri_infinite_cap
+	PREG_L	PREG(t1), 0(PREG(t0))
+	scaddr	PREG(a0), PREG(t1), a0
+	scbndsr PREG(a0), PREG(a0), t2	/* scratch bounds is SBI_SCRATCH_SIZE */
+	li t0,	CHERI_PERM_DATA		/* scratch is a read-write data */
+	acperm	PREG(a0), PREG(a0), t0
+#endif
 	ret
+	.size _hartid_to_scratch, . - _hartid_to_scratch
 
 	.section .entry, "ax", %progbits
 	.align 3
@@ -419,7 +577,7 @@ _start_hang:
 	.align 3
 	.weak fw_platform_init
 fw_platform_init:
-	add	a0, a1, zero
+	mv	PREG(a0), PREG(a1)
 	ret
 
 	/* Map implicit memcpy() added by compiler to sbi_memcpy() */
@@ -470,11 +628,20 @@ memcmp:
 	srl	t0, t0, MSTATUS_MPP_SHIFT
 	and	t0, t0, PRV_M
 	slti	t0, t0, PRV_M
+#if defined(__CHERI_PURE_CAPABILITY__)
+	beqz	t0, 1f
+	PREG_L	PREG(t0), SBI_SCRATCH_STACK_OFFSET(PREG(tp))
+	j 2f
+1:
+	mv	PREG(t0), PREG(sp)
+2:
+#else /* !defined(__CHERI_PURE_CAPABILITY__) */
 	add	t0, t0, -1
 	xor	sp, sp, tp
 	and	t0, t0, sp
 	xor	sp, sp, tp
 	xor	t0, tp, t0
+#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
 
 	/* Save original SP on exception stack */
 	PREG_S	PREG(sp), (SBI_TRAP_REGS_OFFSET(sp) - SBI_TRAP_CONTEXT_SIZE)(PREG(t0))
@@ -559,7 +726,12 @@ memcmp:
 	.endif
 	and	t0, t0, 0x1
 .else
+#if defined(__CHERI_PURE_CAPABILITY__)
+	csrr	t0, CSR_MTVAL2
+	XREG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tval2))(PREG(sp))
+#else
 	XREG_S	zero, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tval2))(PREG(sp))
+#endif
 	XREG_S	zero, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tinst))(PREG(sp))
 	li	t0, 0
 .endif
@@ -568,8 +740,13 @@ memcmp:
 
 .macro	TRAP_CALL_C_ROUTINE
 	/* Call C routine */
-	add	a0, sp, zero
+	mv	PREG(a0), PREG(sp)
+#if defined(__CHERI_PURE_CAPABILITY__)
+	PTR_L	PREG(ra), sbi_trap_handler
+	jalr	PREG(ra)
+#else
 	call	sbi_trap_handler
+#endif
 .endm
 
 .macro	TRAP_RESTORE_GENERAL_REGS_EXCEPT_A0_T0
@@ -628,6 +805,7 @@ memcmp:
 	.section .entry, "ax", %progbits
 	.align 3
 	.globl _trap_handler
+	.type  _trap_handler, @function
 _trap_handler:
 	TRAP_SAVE_AND_SETUP_SP_T0
 
@@ -646,10 +824,12 @@ _trap_handler:
 	TRAP_RESTORE_A0_T0
 
 	mret
+	.size _trap_handler, . - _trap_handler
 
 	.section .entry, "ax", %progbits
 	.align 3
 	.globl _trap_handler_hyp
+	.type  _trap_handler_hyp, @function
 _trap_handler_hyp:
 	TRAP_SAVE_AND_SETUP_SP_T0
 
@@ -680,6 +860,7 @@ _trap_handler_hyp:
 	TRAP_RESTORE_A0_T0
 
 	mret
+	.size _trap_handler_hyp, . - _trap_handler_hyp
 
 	.section .entry, "ax", %progbits
 	.align 3
@@ -728,3 +909,14 @@ fw_fdt_bin:
 	.fill FW_FDT_PADDING, 1, 0
 #endif
 #endif
+
+#if defined(__CHERI_PURE_CAPABILITY__)
+	.section .data
+	.align 4
+	.globl cheri_infinite_cap
+	.type  cheri_infinite_cap, @object
+cheri_infinite_cap:
+	RISCV_PTR 0x0
+	.size cheri_infinite_cap, . - cheri_infinite_cap
+#endif
+
