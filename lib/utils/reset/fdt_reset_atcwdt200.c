@@ -83,14 +83,14 @@ static struct sbi_system_reset_device atcwdt200_reset = {
 static int atcwdt200_reset_init(void *fdt, int nodeoff,
 				const struct fdt_match *match)
 {
-	uint64_t reg_addr;
+	uint64_t reg_addr, reg_size;
 	int rc;
 
-	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &reg_addr, NULL);
+	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &reg_addr, &reg_size);
 	if (rc < 0 || !reg_addr)
 		return SBI_ENODEV;
 
-	wdt_addr = (volatile char *)(unsigned long)reg_addr;
+	wdt_addr = (volatile char *)ioremap(reg_addr, reg_size);
 
 	/*
 	 * The reset device requires smu to program the reset
