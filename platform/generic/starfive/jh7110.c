@@ -26,8 +26,8 @@ struct pmic {
 };
 
 struct jh7110 {
-	u64 pmu_reg_base;
-	u64 clk_reg_base;
+	void *pmu_reg_base;
+	void *clk_reg_base;
 	u32 i2c_clk_offset;
 };
 
@@ -85,7 +85,7 @@ static int pm_system_reset_check(u32 type, u32 reason)
 static int wait_pmu_pd_state(u32 mask)
 {
 	int count = 0;
-	unsigned long addr = jh7110_inst.pmu_reg_base;
+	void *addr = jh7110_inst.pmu_reg_base;
 	u32 val;
 
 	do {
@@ -102,7 +102,7 @@ static int wait_pmu_pd_state(u32 mask)
 
 static int shutdown_device_power_domain(void)
 {
-	unsigned long addr = jh7110_inst.pmu_reg_base;
+	void *addr = jh7110_inst.pmu_reg_base;
 	u32 curr_mode;
 	int ret = 0;
 
@@ -152,7 +152,7 @@ static void pmic_ops(struct pmic *pmic, int type)
 
 static void pmic_i2c_clk_enable(void)
 {
-	unsigned long clock_base;
+	void *clock_base;
 	unsigned int val;
 
 	clock_base = jh7110_inst.clk_reg_base + jh7110_inst.i2c_clk_offset;
@@ -237,24 +237,24 @@ static int starfive_jh7110_inst_init(void *fdt)
 	int noff, rc = 0;
 	const fdt32_t *val;
 	int len;
-	u64 addr;
+	u64 addr, size;
 
 	noff = fdt_node_offset_by_compatible(fdt, -1, "starfive,jh7110-pmu");
 	if (-1 < noff) {
-		rc = fdt_get_node_addr_size(fdt, noff, 0, &addr, NULL);
+		rc = fdt_get_node_addr_size(fdt, noff, 0, &addr, &size);
 		if (rc)
 			goto err;
-		jh7110_inst.pmu_reg_base = addr;
+		jh7110_inst.pmu_reg_base = ioremap(addr, size);
 	} else {
 		return -SBI_ENODEV;
 	}
 
 	noff = fdt_node_offset_by_compatible(fdt, -1, "starfive,jh7110-syscrg");
 	if (-1 < noff) {
-		rc = fdt_get_node_addr_size(fdt, noff, 0, &addr, NULL);
+		rc = fdt_get_node_addr_size(fdt, noff, 0, &addr, &size);
 		if (rc)
 			goto err;
-		jh7110_inst.clk_reg_base = addr;
+		jh7110_inst.clk_reg_base = ioremap(addr, size);
 	} else {
 		return -SBI_ENODEV;
 	}
