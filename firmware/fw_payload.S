@@ -47,7 +47,7 @@ fw_next_arg1:
 #ifdef FW_PAYLOAD_FDT_ADDR
 	li	a0, FW_PAYLOAD_FDT_ADDR
 #elif defined(FW_PAYLOAD_FDT_OFFSET)
-	lla	a0, _fw_start
+	PTR_L	PREG(a0), _fw_start
 	li	a1, FW_PAYLOAD_FDT_OFFSET
 	add	a0, a0, a1
 #else
@@ -63,7 +63,7 @@ fw_next_arg1:
 	 * The next address should be returned in 'a0'.
 	 */
 fw_next_addr:
-	lla	a0, payload_bin
+	PTR_L	PREG(a0), payload_bin
 	ret
 
 	.section .entry, "ax", %progbits

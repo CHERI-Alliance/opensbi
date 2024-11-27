@@ -15,15 +15,15 @@
 	.globl _start
 _start:
 	/* Pick one hart to run the main boot sequence */
-	lla	a3, _hart_lottery
+	PTR_L	PREG(a3), _hart_lottery
 	li	a2, 1
 #if defined(__riscv_atomic) || defined(__riscv_zaamo)
-	amoadd.w a3, a2, (a3)
+	amoadd.w a3, a2, (PREG(a3))
 #elif defined(__riscv_zalrsc)
 _sc_fail:
-	lr.w	t0, (a3)
+	lr.w	t0, (PREG(a3))
 	addw	t1, t0, a2
-	sc.w	t1, t1, (a3)
+	sc.w	t1, t1, (PREG(a3))
 	bnez	t1, _sc_fail
 	move	a3, t0
 #else
@@ -32,17 +32,17 @@ _sc_fail:
 	bnez	a3, _start_hang
 
 	/* Save a0 and a1 */
-	lla	a3, _boot_a0
-	REG_S	a0, 0(a3)
-	lla	a3, _boot_a1
-	REG_S	a1, 0(a3)
+	PTR_L	PREG(a3), _boot_a0
+	REG_S	REG(a0), 0(PREG(a3))
+	PTR_L	PREG(a3), _boot_a1
+	REG_S	REG(a1), 0(PREG(a3))
 
 	/* Zero-out BSS */
-	lla	a4, _bss_start
-	lla	a5, _bss_end
+	PTR_L	PREG(a4), _bss_start
+	PTR_L	PREG(a5), _bss_end
 _bss_zero:
-	REG_S	zero, (a4)
-	add	a4, a4, __SIZEOF_POINTER__
+	REG_S	REG_ZERO, (PREG(a4))
+	add	PREG(a4), PREG(a4), __SIZEOF_POINTER__
 	blt	a4, a5, _bss_zero
 
 _start_warm:
@@ -51,19 +51,19 @@ _start_warm:
 	csrw	CSR_SIP, zero
 
 	/* Setup exception vectors */
-	lla	a3, _start_hang
-	csrw	CSR_STVEC, a3
+	PTR_L	PREG(a3), _start_hang
+	csrw	CSR_STVEC, PREG(a3)
 
 	/* Setup stack */
-	lla	a3, _payload_end
+	PTR_L	PREG(a3), _payload_end
 	li	a4, 0x2000
-	add	sp, a3, a4
+	add	PREG(sp), PREG(a3), a4
 
 	/* Jump to C main */
-	lla	a3, _boot_a0
-	REG_L	a0, 0(a3)
-	lla	a3, _boot_a1
-	REG_L	a1, 0(a3)
+	PTR_L	PREG(a3), _boot_a0
+	REG_L	REG(a0), 0(PREG(a3))
+	PTR_L	PREG(a3), _boot_a1
+	REG_L	REG(a1), 0(PREG(a3))
 	call	test_main
 
 	/* We don't expect to reach here hence just hang */

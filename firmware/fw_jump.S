@@ -47,7 +47,7 @@ fw_next_arg1:
 #ifdef FW_JUMP_FDT_ADDR
 	li	a0, FW_JUMP_FDT_ADDR
 #elif defined(FW_JUMP_FDT_OFFSET)
-	lla	a0, _fw_start
+	PTR_L	PREG(a0), _fw_start
 	li	a1, FW_JUMP_FDT_OFFSET
 	add	a0, a0, a1
 #else
@@ -64,10 +64,10 @@ fw_next_arg1:
 	 */
 fw_next_addr:
 #ifdef FW_JUMP_ADDR
-	lla	a0, _jump_addr
-	REG_L	a0, (a0)
+	PTR_L	PREG(a0), _jump_addr
+	XREG_L	a0, (PREG(a0))
 #elif defined(FW_JUMP_OFFSET)
-	lla	a0, _fw_start
+	PTR_L	PREG(a0), _fw_start
 	li	a1, FW_JUMP_OFFSET
 	add	a0, a0, a1
 #else
@@ -102,5 +102,5 @@ fw_options:
 	.section .rodata
 	.align 3
 _jump_addr:
-	RISCV_PTR FW_JUMP_ADDR
+	RISCV_ADDR FW_JUMP_ADDR
 #endif
