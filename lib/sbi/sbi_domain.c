@@ -394,7 +394,7 @@ static int sanitize_domain(struct sbi_domain *dom)
 	if (!sbi_domain_check_addr(dom, dom->next_addr, dom->next_mode,
 				   SBI_DOMAIN_EXECUTE)) {
 		sbi_printf("%s: %s next booting stage address 0x%lx can't "
-			   "execute\n", __func__, dom->name, dom->next_addr);
+			   "execute\n", __func__, dom->name, (unsigned long)dom->next_addr);
 		return SBI_EINVAL;
 	}
 
@@ -489,10 +489,10 @@ void sbi_domain_dump(const struct sbi_domain *dom, const char *suffix)
 	}
 
 	sbi_printf("Domain%d Next Address%s: 0x%" PRILX "\n",
-		   dom->index, suffix, dom->next_addr);
+		   dom->index, suffix, (unsigned long)dom->next_addr);
 
 	sbi_printf("Domain%d Next Arg1   %s: 0x%" PRILX "\n",
-		   dom->index, suffix, dom->next_arg1);
+		   dom->index, suffix, (unsigned long)dom->next_arg1);
 
 	sbi_printf("Domain%d Next Mode   %s: ", dom->index, suffix);
 	switch (dom->next_mode) {

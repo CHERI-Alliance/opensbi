@@ -187,9 +187,9 @@ struct sbi_domain {
 	/** HART id of the HART booting this domain */
 	u32 boot_hartid;
 	/** Arg1 (or 'a1' register) of next booting stage for this domain */
-	unsigned long next_arg1;
+	uintptr_t next_arg1;
 	/** Address of next booting stage for this domain */
-	unsigned long next_addr;
+	uintptr_t next_addr;
 	/** Privilege mode of next booting stage for this domain */
 	unsigned long next_mode;
 	/** Is domain allowed to reset the system */
