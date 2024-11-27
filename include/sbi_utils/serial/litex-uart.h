@@ -12,6 +12,6 @@
 
 #include <sbi/sbi_types.h>
 
-int litex_uart_init(unsigned long base);
+int litex_uart_init(void *base);
 
 #endif

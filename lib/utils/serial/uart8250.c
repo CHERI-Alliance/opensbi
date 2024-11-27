@@ -104,7 +104,7 @@ static struct sbi_console_device uart8250_console = {
 	.console_getc = uart8250_getc
 };
 
-void uart8250_device_init(struct uart8250_device *dev, unsigned long base,
+void uart8250_device_init(struct uart8250_device *dev, void *base,
 			  u32 in_freq, u32 baudrate, u32 reg_shift,
 			  u32 reg_width, u32 reg_offset, u32 caps)
 {
@@ -147,7 +147,7 @@ void uart8250_device_init(struct uart8250_device *dev, unsigned long base,
 	set_reg(dev, UART_SCR_OFFSET, 0x00);
 }
 
-int uart8250_init(unsigned long base, u32 in_freq, u32 baudrate, u32 reg_shift,
+int uart8250_init(void *base, u32 in_freq, u32 baudrate, u32 reg_shift,
 		  u32 reg_width, u32 reg_offset, u32 caps)
 {
 	uart8250_device_init(&uart8250_dev, base, in_freq, baudrate,
@@ -155,7 +155,8 @@ int uart8250_init(unsigned long base, u32 in_freq, u32 baudrate, u32 reg_shift,
 
 	sbi_console_set_device(&uart8250_console);
 
-	return sbi_domain_root_add_memrange(base, PAGE_SIZE, PAGE_SIZE,
+	return sbi_domain_root_add_memrange((unsigned long)base,
+						PAGE_SIZE, PAGE_SIZE,
 					    (SBI_DOMAIN_MEMREGION_MMIO |
 					    SBI_DOMAIN_MEMREGION_SHARED_SURW_MRW));
 }

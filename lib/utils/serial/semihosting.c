@@ -25,7 +25,7 @@
 static long semihosting_trap(int sysnum, void *addr)
 {
 	register int ret asm ("a0") = sysnum;
-	register void *param0 asm (RREG(a1)) = addr;
+	register void *param0 asm (PREG(a1)) = addr;
 
 	asm volatile (
 		"	.align 4\n"
@@ -48,7 +48,7 @@ static bool try_semihosting = true;
 bool semihosting_enabled(void)
 {
 	register int ret asm ("a0") = SYSERRNO;
-	register void *param0 asm (RREG(a1)) = NULL;
+	register void *param0 asm (PREG(a1)) = NULL;
 	uintptr_t tmp = 0, tmp2 = 0;
 
 	if (!try_semihosting)
@@ -61,16 +61,18 @@ bool semihosting_enabled(void)
 
 		"	j _semihost_test_vector_next\n"
 		"	.align 4\n"
+		"	.type  _semihost_test_vector, @function\n"
 		"_semihost_test_vector:\n"
 		"	csrr %[tmp], " STR(CSR_MEPC) "\n"
 		"	add %[tmp], %[tmp], 4\n"
 		"	csrw  " STR(CSR_MEPC) ", %[tmp]\n"
 		"	add %[en], zero, zero\n"
 		"	mret\n"
-		"_semihost_test_vector_next:\n"
+		"	.size _semihost_test_vector, . - _semihost_test_vector\n"
 
+		"_semihost_test_vector_next:\n"
 		"	" PTR_L " %[tmp2], _semihost_test_vector\n"
-		"	csrrw %[tmp], " STR(CSR_MTVEC) ", %[tmp]\n"
+		"	csrrw %[tmp2], " STR(CSR_MTVEC) ", %[tmp2]\n"
 		"	.align 4\n"
 		"	slli zero, zero, 0x1f\n"
 		"	ebreak\n"

@@ -26,11 +26,11 @@ int uart8250_device_getc(struct uart8250_device *dev);
 
 void uart8250_device_putc(struct uart8250_device *dev, char ch);
 
-void uart8250_device_init(struct uart8250_device *dev, unsigned long base,
+void uart8250_device_init(struct uart8250_device *dev, void *base,
 			  u32 in_freq, u32 baudrate, u32 reg_shift,
 			  u32 reg_width, u32 reg_offset, u32 caps);
 
-int uart8250_init(unsigned long base, u32 in_freq, u32 baudrate, u32 reg_shift,
+int uart8250_init(void *base, u32 in_freq, u32 baudrate, u32 reg_shift,
 		  u32 reg_width, u32 reg_offset, u32 caps);
 
 #endif

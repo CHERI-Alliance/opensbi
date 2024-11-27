@@ -60,7 +60,7 @@ static struct sbi_console_device litex_console = {
 	.console_getc = litex_uart_getc
 };
 
-int litex_uart_init(unsigned long base)
+int litex_uart_init(void *base)
 {
 	uart_base = (volatile u32 *)base;
 	set_reg(UART_REG_EV_ENABLE, 0); /* UART in polling mode: disable IRQ */

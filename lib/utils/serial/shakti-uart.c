@@ -44,7 +44,7 @@ static struct sbi_console_device shakti_console = {
 	.console_getc = shakti_uart_getc
 };
 
-int shakti_uart_init(unsigned long base, u32 in_freq, u32 baudrate)
+int shakti_uart_init(void *base, u32 in_freq, u32 baudrate)
 {
 	uart_base = (volatile char *)base;
 	u16 baud;

@@ -63,7 +63,7 @@ static struct sbi_console_device gaisler_console = {
 	.console_getc = gaisler_uart_getc
 };
 
-int gaisler_uart_init(unsigned long base, u32 in_freq, u32 baudrate)
+int gaisler_uart_init(void *base, u32 in_freq, u32 baudrate)
 {
 	u32 ctrl;
 

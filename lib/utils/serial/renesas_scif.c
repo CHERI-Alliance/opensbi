@@ -84,7 +84,7 @@ static struct sbi_console_device renesas_scif_console = {
 	.console_putc	= renesas_scif_putc,
 };
 
-int renesas_scif_init(unsigned long base, u32 in_freq, u32 baudrate)
+int renesas_scif_init(void *base, u32 in_freq, u32 baudrate)
 {
 	uint16_t data16;
 

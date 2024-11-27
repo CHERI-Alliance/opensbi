@@ -11,6 +11,6 @@
 
 #include <sbi/sbi_types.h>
 
-int xlnx_uartlite_init(unsigned long base);
+int xlnx_uartlite_init(void *base);
 
 #endif
