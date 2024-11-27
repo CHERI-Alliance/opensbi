@@ -7,6 +7,7 @@
  *   Anup Patel <anup.patel@wdc.com>
  */
 
+#include <sbi/riscv_asm.h>
 #include <sbi/sbi_ecall_interface.h>
 #include <sbi/sbi_string.h>
 
@@ -15,27 +16,27 @@ struct sbiret {
 	unsigned long value;
 };
 
-struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
-			unsigned long arg1, unsigned long arg2,
-			unsigned long arg3, unsigned long arg4,
-			unsigned long arg5)
+struct sbiret sbi_ecall(int ext, int fid, uintptr_t arg0,
+			uintptr_t arg1, uintptr_t arg2,
+			uintptr_t arg3, uintptr_t arg4,
+			uintptr_t arg5)
 {
 	struct sbiret ret;
 
-	register unsigned long a0 asm ("a0") = (unsigned long)(arg0);
-	register unsigned long a1 asm ("a1") = (unsigned long)(arg1);
-	register unsigned long a2 asm ("a2") = (unsigned long)(arg2);
-	register unsigned long a3 asm ("a3") = (unsigned long)(arg3);
-	register unsigned long a4 asm ("a4") = (unsigned long)(arg4);
-	register unsigned long a5 asm ("a5") = (unsigned long)(arg5);
-	register unsigned long a6 asm ("a6") = (unsigned long)(fid);
-	register unsigned long a7 asm ("a7") = (unsigned long)(ext);
+	register uintptr_t a0 asm (REG(a0)) = (uintptr_t)(arg0);
+	register uintptr_t a1 asm (REG(a1)) = (uintptr_t)(arg1);
+	register uintptr_t a2 asm (REG(a2)) = (uintptr_t)(arg2);
+	register uintptr_t a3 asm (REG(a3)) = (uintptr_t)(arg3);
+	register uintptr_t a4 asm (REG(a4)) = (uintptr_t)(arg4);
+	register uintptr_t a5 asm (REG(a5)) = (uintptr_t)(arg5);
+	register uintptr_t a6 asm (REG(a6)) = (uintptr_t)(fid);
+	register uintptr_t a7 asm (REG(a7)) = (uintptr_t)(ext);
 	asm volatile ("ecall"
-		      : "+r" (a0), "+r" (a1)
-		      : "r" (a2), "r" (a3), "r" (a4), "r" (a5), "r" (a6), "r" (a7)
+		      : "+" PTR_REG (a0), "+" PTR_REG (a1)
+		      : PTR_REG (a2), PTR_REG (a3), PTR_REG (a4), PTR_REG (a5), PTR_REG (a6), PTR_REG (a7)
 		      : "memory");
-	ret.error = a0;
-	ret.value = a1;
+	ret.error = (unsigned long)a0;
+	ret.value = (unsigned long)a1;
 
 	return ret;
 }
@@ -51,7 +52,7 @@ static inline void sbi_ecall_console_puts(const char *str)
 		__asm__ __volatile__("wfi" ::: "memory"); \
 	} while (0)
 
-void test_main(unsigned long a0, unsigned long a1)
+void test_main(uintptr_t a0, uintptr_t a1)
 {
 	sbi_ecall_console_puts("\nTest payload running\n");
 
