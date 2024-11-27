@@ -24,15 +24,15 @@
 __sbi_expected_trap:
 	/* Without H-extension so, MTVAL2 and MTINST CSRs and GVA not available */
 	csrr	a4, CSR_MCAUSE
-	REG_S	a4, SBI_TRAP_INFO_OFFSET(cause)(a3)
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(cause)(PREG(a3))
 	csrr	a4, CSR_MTVAL
-	REG_S	a4, SBI_TRAP_INFO_OFFSET(tval)(a3)
-	REG_S	zero, SBI_TRAP_INFO_OFFSET(tval2)(a3)
-	REG_S	zero, SBI_TRAP_INFO_OFFSET(tinst)(a3)
-	REG_S	zero, SBI_TRAP_INFO_OFFSET(gva)(a3)
-	csrr	a4, CSR_MEPC
-	add	a4, a4, 4
-	csrw	CSR_MEPC, a4
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tval)(PREG(a3))
+	XREG_S	zero, SBI_TRAP_INFO_OFFSET(tval2)(PREG(a3))
+	XREG_S	zero, SBI_TRAP_INFO_OFFSET(tinst)(PREG(a3))
+	XREG_S	zero, SBI_TRAP_INFO_OFFSET(gva)(PREG(a3))
+	csrr	PREG(a4), CSR_MEPC
+	add	PREG(a4), PREG(a4), 4
+	csrw	CSR_MEPC, PREG(a4)
 	mret
 
 	.align 3
@@ -40,13 +40,13 @@ __sbi_expected_trap:
 __sbi_expected_trap_hext:
 	/* With H-extension so, MTVAL2 and MTINST CSRs and GVA available */
 	csrr	a4, CSR_MCAUSE
-	REG_S	a4, SBI_TRAP_INFO_OFFSET(cause)(a3)
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(cause)(PREG(a3))
 	csrr	a4, CSR_MTVAL
-	REG_S	a4, SBI_TRAP_INFO_OFFSET(tval)(a3)
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tval)(PREG(a3))
 	csrr	a4, CSR_MTVAL2
-	REG_S	a4, SBI_TRAP_INFO_OFFSET(tval2)(a3)
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tval2)(PREG(a3))
 	csrr	a4, CSR_MTINST
-	REG_S	a4, SBI_TRAP_INFO_OFFSET(tinst)(a3)
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tinst)(PREG(a3))
 
 	/* Extract GVA bit from MSTATUS or MSTATUSH */
 #if __riscv_xlen == 32
@@ -57,9 +57,9 @@ __sbi_expected_trap_hext:
 	srli	a4, a4, MSTATUS_GVA_SHIFT
 #endif
 	andi	a4, a4, 1
-	REG_S	a4, SBI_TRAP_INFO_OFFSET(gva)(a3)
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(gva)(PREG(a3))
 
-	csrr	a4, CSR_MEPC
-	add	a4, a4, 4
-	csrw	CSR_MEPC, a4
+	csrr	PREG(a4), CSR_MEPC
+	add	PREG(a4), PREG(a4), 4
+	csrw	CSR_MEPC, PREG(a4)
 	mret

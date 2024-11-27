@@ -44,40 +44,40 @@ _start:
 #endif /* defined(__riscv_zcherihybrid) */
 
 	/* Find preferred boot HART id */
-	MOV_3R	s0, a0, s1, a1, s2, a2
+	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 	call	fw_boot_hart
 	add	a6, a0, zero
-	MOV_3R	a0, s0, a1, s1, a2, s2
+	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	li	a7, -1
 	beq	a6, a7, _try_lottery
 	/* Jump to relocation wait loop if we are not boot hart */
 	bne	a0, a6, _wait_for_boot_hart
 _try_lottery:
 	/* Jump to relocation wait loop if we don't get relocation lottery */
-	lla	a6, _boot_status
+	PTR_L	PREG(a6), _boot_status
 	li	a7, BOOT_STATUS_LOTTERY_DONE
-	amoswap.w a6, a7, (a6)
+	amoswap.w a6, a7, (PREG(a6))
 	bnez	a6, _wait_for_boot_hart
 
 	/* relocate the global table content */
 	li	t0, FW_TEXT_START	/* link start */
-	lla	t1, _fw_start		/* load start */
+	PTR_L	PREG(t1), _fw_start		/* load start */
 	sub	t2, t1, t0		/* load offset */
-	lla	t0, __rel_dyn_start
-	lla	t1, __rel_dyn_end
+	PTR_L	PREG(t0), __rel_dyn_start
+	PTR_L	PREG(t1), __rel_dyn_end
 	beq	t0, t1, _relocate_done
 2:
-	REG_L	t5, REGBYTES(t0)	/* t5 <-- relocation info:type */
+	XREG_L	t5, SZXREG(PREG(t0))	/* t5 <-- relocation info:type */
 	li	t3, R_RISCV_RELATIVE	/* reloc type R_RISCV_RELATIVE */
 	bne	t5, t3, 3f
-	REG_L	t3, 0(t0)
-	REG_L	t5, (REGBYTES * 2)(t0)	/* t5 <-- addend */
-	add	t5, t5, t2
-	add	t3, t3, t2
-	REG_S	t5, 0(t3)		/* store runtime address to the GOT entry */
+	PREG_L	PREG(t3), 0(PREG(t0))
+	PREG_L	PREG(t5), (SZXREG * 2)(PREG(t0))	/* t5 <-- addend */
+	add	PREG(t5), PREG(t5), t2
+	add	PREG(t3), PREG(t3), t2
+	PREG_S	PREG(t5), 0(PREG(t3))		/* store runtime address to the GOT entry */
 
 3:
-	add	t0, t0, (REGBYTES * 3)
+	add	PREG(t0), PREG(t0), (REGBYTES * 3)
 	blt	t0, t1, 2b
 _relocate_done:
 	/* At this point we are running from link address */
@@ -87,30 +87,30 @@ _relocate_done:
 	call	_reset_regs
 
 	/* Zero-out BSS */
-	lla	s4, _bss_start
-	lla	s5, _bss_end
+	PTR_L	PREG(s4), _bss_start
+	PTR_L	PREG(s5), _bss_end
 _bss_zero:
-	REG_S	zero, (s4)
-	add	s4, s4, __SIZEOF_POINTER__
+	REG_S	REG_ZERO, (PREG(s4))
+	add	PREG(s4), PREG(s4), SZREG
 	blt	s4, s5, _bss_zero
 
 	/* Setup temporary trap handler */
-	lla	s4, _start_hang
-	csrw	CSR_MTVEC, s4
+	PTR_L	PREG(s4), _start_hang
+	csrw	CSR_MTVEC, PREG(s4)
 
 	/* Setup temporary stack */
-	lla	s4, _fw_end
+	PTR_L	PREG(s4), _fw_end
 	li	s5, (SBI_SCRATCH_SIZE * 2)
-	add	sp, s4, s5
+	add	PREG(sp), PREG(s4), s5
 
 	/* Allow main firmware to save info */
-	MOV_5R	s0, a0, s1, a1, s2, a2, s3, a3, s4, a4
+	MOV_5R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2), REG(s3), REG(a3), REG(s4), REG(a4)
 	call	fw_save_info
-	MOV_5R	a0, s0, a1, s1, a2, s2, a3, s3, a4, s4
+	MOV_5R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2), REG(a3), REG(s3), REG(a4), REG(s4)
 
 #ifdef FW_FDT_PATH
 	/* Override previous arg1 */
-	lla	a1, fw_fdt_bin
+	PTR_L	PREG(a1), fw_fdt_bin
 #endif
 
 	/*
@@ -118,10 +118,10 @@ _bss_zero:
 	 * Note: The a0 to a4 registers passed to the
 	 * firmware are parameters to this function.
 	 */
-	MOV_5R	s0, a0, s1, a1, s2, a2, s3, a3, s4, a4
+	MOV_5R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2), REG(s3), REG(a3), REG(s4), REG(a4)
 	call	fw_platform_init
 	add	t0, a0, zero
-	MOV_5R	a0, s0, a1, s1, a2, s2, a3, s3, a4, s4
+	MOV_5R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2), REG(a3), REG(s3), REG(a4), REG(s4)
 	add	a1, t0, zero
 
 	/* Preload HART details
@@ -130,25 +130,25 @@ _bss_zero:
 	 * s9 -> Heap Size
 	 * s10 -> Heap Offset
 	 */
-	lla	a4, platform
+	PTR_L	PREG(a4), platform
 #if __riscv_xlen > 32
-	lwu	s7, SBI_PLATFORM_HART_COUNT_OFFSET(a4)
-	lwu	s8, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(a4)
-	lwu	s9, SBI_PLATFORM_HEAP_SIZE_OFFSET(a4)
+	lwu	s7, SBI_PLATFORM_HART_COUNT_OFFSET(PREG(a4))
+	lwu	s8, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(PREG(a4))
+	lwu	s9, SBI_PLATFORM_HEAP_SIZE_OFFSET(PREG(a4))
 #else
-	lw	s7, SBI_PLATFORM_HART_COUNT_OFFSET(a4)
-	lw	s8, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(a4)
-	lw	s9, SBI_PLATFORM_HEAP_SIZE_OFFSET(a4)
+	lw	s7, SBI_PLATFORM_HART_COUNT_OFFSET(PREG(a4))
+	lw	s8, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(PREG(a4))
+	lw	s9, SBI_PLATFORM_HEAP_SIZE_OFFSET(PREG(a4))
 #endif
 
 	/* Setup scratch space for all the HARTs*/
-	lla	tp, _fw_end
+	PTR_L	PREG(tp), _fw_end
 	mul	a5, s7, s8
-	add	tp, tp, a5
+	add	PREG(tp), PREG(tp), a5
 	/* Setup heap base address */
-	lla	s10, _fw_start
+	PTR_L	PREG(s10), _fw_start
 	sub	s10, tp, s10
-	add	tp, tp, s9
+	add	PREG(tp), PREG(tp), s9
 	/* Keep a copy of tp */
 	add	t3, tp, zero
 	/* Counter */
@@ -175,56 +175,56 @@ _scratch_init:
 
 	/* Initialize scratch space */
 	/* Store fw_start and fw_size in scratch space */
-	lla	a4, _fw_start
+	PTR_L	PREG(a4), _fw_start
 	sub	a5, t3, a4
-	REG_S	a4, SBI_SCRATCH_FW_START_OFFSET(tp)
-	REG_S	a5, SBI_SCRATCH_FW_SIZE_OFFSET(tp)
+	XREG_S	a4, SBI_SCRATCH_FW_START_OFFSET(PREG(tp))
+	XREG_S	a5, SBI_SCRATCH_FW_SIZE_OFFSET(PREG(tp))
 
 	/* Store R/W section's offset in scratch space */
-	lla	a5, _fw_rw_start
+	PTR_L	PREG(a5), _fw_rw_start
 	sub	a5, a5, a4
-	REG_S	a5, SBI_SCRATCH_FW_RW_OFFSET(tp)
+	XREG_S	a5, SBI_SCRATCH_FW_RW_OFFSET(PREG(tp))
 
 	/* Store fw_heap_offset and fw_heap_size in scratch space */
-	REG_S	s10, SBI_SCRATCH_FW_HEAP_OFFSET(tp)
-	REG_S	s9, SBI_SCRATCH_FW_HEAP_SIZE_OFFSET(tp)
+	XREG_S	s10, SBI_SCRATCH_FW_HEAP_OFFSET(PREG(tp))
+	XREG_S	s9, SBI_SCRATCH_FW_HEAP_SIZE_OFFSET(PREG(tp))
 
 	/* Store next arg1 in scratch space */
-	MOV_3R	s0, a0, s1, a1, s2, a2
+	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 	call	fw_next_arg1
-	REG_S	a0, SBI_SCRATCH_NEXT_ARG1_OFFSET(tp)
-	MOV_3R	a0, s0, a1, s1, a2, s2
+	XREG_S	a0, SBI_SCRATCH_NEXT_ARG1_OFFSET(PREG(tp))
+	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	/* Store next address in scratch space */
-	MOV_3R	s0, a0, s1, a1, s2, a2
+	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 	call	fw_next_addr
-	REG_S	a0, SBI_SCRATCH_NEXT_ADDR_OFFSET(tp)
-	MOV_3R	a0, s0, a1, s1, a2, s2
+	XREG_S	a0, SBI_SCRATCH_NEXT_ADDR_OFFSET(PREG(tp))
+	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	/* Store next mode in scratch space */
-	MOV_3R	s0, a0, s1, a1, s2, a2
+	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 	call	fw_next_mode
-	REG_S	a0, SBI_SCRATCH_NEXT_MODE_OFFSET(tp)
-	MOV_3R	a0, s0, a1, s1, a2, s2
+	XREG_S	a0, SBI_SCRATCH_NEXT_MODE_OFFSET(PREG(tp))
+	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	/* Store warm_boot address in scratch space */
-	lla	a4, _start_warm
-	REG_S	a4, SBI_SCRATCH_WARMBOOT_ADDR_OFFSET(tp)
+	PTR_L	PREG(a4), _start_warm
+	XREG_S	a4, SBI_SCRATCH_WARMBOOT_ADDR_OFFSET(PREG(tp))
 	/* Store platform address in scratch space */
-	lla	a4, platform
-	REG_S	a4, SBI_SCRATCH_PLATFORM_ADDR_OFFSET(tp)
+	PTR_L	PREG(a4), platform
+	XREG_S	a4, SBI_SCRATCH_PLATFORM_ADDR_OFFSET(PREG(tp))
 	/* Store hartid-to-scratch function address in scratch space */
-	lla	a4, _hartid_to_scratch
-	REG_S	a4, SBI_SCRATCH_HARTID_TO_SCRATCH_OFFSET(tp)
+	PTR_L	PREG(a4), _hartid_to_scratch
+	XREG_S	a4, SBI_SCRATCH_HARTID_TO_SCRATCH_OFFSET(PREG(tp))
 	/* Clear trap_context and tmp0 in scratch space */
-	REG_S	zero, SBI_SCRATCH_TRAP_CONTEXT_OFFSET(tp)
-	REG_S	zero, SBI_SCRATCH_TMP0_OFFSET(tp)
+	XREG_S	zero, SBI_SCRATCH_TRAP_CONTEXT_OFFSET(PREG(tp))
+	XREG_S	zero, SBI_SCRATCH_TMP0_OFFSET(PREG(tp))
 	/* Store firmware options in scratch space */
-	MOV_3R	s0, a0, s1, a1, s2, a2
+	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 #ifdef FW_OPTIONS
 	li	a0, FW_OPTIONS
 #else
 	call	fw_options
 #endif
-	REG_S	a0, SBI_SCRATCH_OPTIONS_OFFSET(tp)
-	MOV_3R	a0, s0, a1, s1, a2, s2
+	XREG_S	a0, SBI_SCRATCH_OPTIONS_OFFSET(PREG(tp))
+	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	/* Move to next scratch space */
 	add	t1, t1, t2
 	blt	t1, s7, _scratch_init
@@ -241,19 +241,19 @@ _scratch_init:
 	/* Mask values in a4 */
 	li	a4, 0xff
 	/* t1 = destination FDT start address */
-	MOV_3R	s0, a0, s1, a1, s2, a2
+	MOV_3R	REG(s0), REG(a0), REG(s1), REG(a1), REG(s2), REG(a2)
 	call	fw_next_arg1
 	add	t1, a0, zero
-	MOV_3R	a0, s0, a1, s1, a2, s2
+	MOV_3R	REG(a0), REG(s0), REG(a1), REG(s1), REG(a2), REG(s2)
 	beqz	t1, _fdt_reloc_done
 	beq	t1, a1, _fdt_reloc_done
 	/* t0 = source FDT start address */
 	add	t0, a1, zero
 	/* t2 = source FDT size in big-endian */
 #if __riscv_xlen > 32
-	lwu	t2, 4(t0)
+	lwu	t2, 4(PREG(t0))
 #else
-	lw	t2, 4(t0)
+	lw	t2, 4(PREG(t0))
 #endif
 	/* t3 = bit[15:8] of FDT size */
 	add	t3, t2, zero
@@ -281,25 +281,25 @@ _scratch_init:
 	/* FDT copy loop */
 	ble	t2, t1, _fdt_reloc_done
 _fdt_reloc_again:
-	REG_L	t3, 0(t0)
-	REG_S	t3, 0(t1)
-	add	t0, t0, __SIZEOF_POINTER__
-	add	t1, t1, __SIZEOF_POINTER__
+	XREG_L	t3, 0(PREG(t0))
+	XREG_S	t3, 0(PREG(t1))
+	add	PREG(t0), PREG(t0), SZXREG
+	add	PREG(t1), PREG(t1), SZXREG
 	blt	t1, t2, _fdt_reloc_again
 _fdt_reloc_done:
 
 	/* mark boot hart done */
 	li	t0, BOOT_STATUS_BOOT_HART_DONE
-	lla	t1, _boot_status
+	PTR_L	PREG(t1), _boot_status
 	fence	rw, rw
-	REG_S	t0, 0(t1)
+	XREG_S	t0, 0(PREG(t1))
 	j	_start_warm
 
 	/* waiting for boot hart to be done (_boot_status == 2) */
 _wait_for_boot_hart:
 	li	t0, BOOT_STATUS_BOOT_HART_DONE
-	lla	t1, _boot_status
-	REG_L	t1, 0(t1)
+	PTR_L	PREG(t1), _boot_status
+	XREG_L	t1, 0(PREG(t1))
 	/* Reduce the bus traffic so that boot hart may proceed faster */
 	div	t2, t2, zero
 	div	t2, t2, zero
@@ -315,15 +315,15 @@ _start_warm:
 	csrw	CSR_MIE, zero
 
 	/* Find HART count and HART stack size */
-	lla	a4, platform
+	PTR_L	PREG(a4), platform
 #if __riscv_xlen > 32
-	lwu	s7, SBI_PLATFORM_HART_COUNT_OFFSET(a4)
-	lwu	s8, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(a4)
+	lwu	s7, SBI_PLATFORM_HART_COUNT_OFFSET(PREG(a4))
+	lwu	s8, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(PREG(a4))
 #else
-	lw	s7, SBI_PLATFORM_HART_COUNT_OFFSET(a4)
-	lw	s8, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(a4)
+	lw	s7, SBI_PLATFORM_HART_COUNT_OFFSET(PREG(a4))
+	lw	s8, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(PREG(a4))
 #endif
-	REG_L	s9, SBI_PLATFORM_HART_INDEX2ID_OFFSET(a4)
+	REG_L	PREG(s9), SBI_PLATFORM_HART_INDEX2ID_OFFSET(PREG(a4))
 
 	/* Find HART id */
 	csrr	s6, CSR_MHARTID
@@ -333,19 +333,19 @@ _start_warm:
 	li	a4, 0
 1:
 #if __riscv_xlen > 32
-	lwu	a5, (s9)
+	lwu	a5, (PREG(s9))
 #else
-	lw	a5, (s9)
+	lw	a5, (PREG(s9))
 #endif
 	beq	a5, s6, 2f
-	add	s9, s9, 4
+	add	PREG(s9), PREG(s9), 4
 	add	a4, a4, 1
 	blt	a4, s7, 1b
 2:	add	s6, a4, zero
 3:	bge	s6, s7, _start_hang
 
 	/* Find the scratch space based on HART index */
-	lla	tp, _fw_end
+	PTR_L	PREG(tp), _fw_end
 	mul	a5, s7, s8
 	add	tp, tp, a5
 	mul	a5, s8, s6
@@ -354,23 +354,23 @@ _start_warm:
 	sub	tp, tp, a5
 
 	/* update the mscratch */
-	csrw	CSR_MSCRATCH, tp
+	csrw	CSR_MSCRATCH, PREG(tp)
 
 	/* Setup stack */
-	add	sp, tp, zero
+	add	PREG(sp), PREG(tp), zero
 
 	/* Setup trap handler */
-	lla	a4, _trap_handler
+	PTR_L	PREG(a4), _trap_handler
 	csrr	a5, CSR_MISA
 	srli	a5, a5, ('H' - 'A')
 	andi	a5, a5, 0x1
 	beq	a5, zero, _skip_trap_handler_hyp
-	lla	a4, _trap_handler_hyp
+	PTR_L	PREG(a4), _trap_handler_hyp
 _skip_trap_handler_hyp:
-	csrw	CSR_MTVEC, a4
+	csrw	CSR_MTVEC, PREG(a4)
 
 	/* Initialize SBI runtime */
-	csrr	a0, CSR_MSCRATCH
+	csrr	PREG(a0), CSR_MSCRATCH
 	call	sbi_init
 
 	/* We don't expect to reach here hence just hang */
@@ -379,7 +379,7 @@ _skip_trap_handler_hyp:
 	.data
 	.align 3
 _boot_status:
-	RISCV_PTR	0
+	RISCV_LONG	0
 
 	.section .entry, "ax", %progbits
 	.align 3
@@ -392,17 +392,17 @@ _hartid_to_scratch:
 	 * t1 -> HART Stack End
 	 * t2 -> Temporary
 	 */
-	lla	t2, platform
+	PTR_L	PREG(t2), platform
 #if __riscv_xlen > 32
-	lwu	t0, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(t2)
-	lwu	t2, SBI_PLATFORM_HART_COUNT_OFFSET(t2)
+	lwu	t0, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(PREG(t2))
+	lwu	t2, SBI_PLATFORM_HART_COUNT_OFFSET(PREG(t2))
 #else
-	lw	t0, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(t2)
-	lw	t2, SBI_PLATFORM_HART_COUNT_OFFSET(t2)
+	lw	t0, SBI_PLATFORM_HART_STACK_SIZE_OFFSET(PREG(t2))
+	lw	t2, SBI_PLATFORM_HART_COUNT_OFFSET(PREG(t2))
 #endif
 	sub	t2, t2, a1
 	mul	t2, t2, t0
-	lla	t1, _fw_end
+	PTR_L	PREG(t1), _fw_end
 	add	t1, t1, t2
 	li	t2, SBI_SCRATCH_SIZE
 	sub	a0, t1, t2
@@ -452,10 +452,10 @@ memcmp:
 
 .macro	TRAP_SAVE_AND_SETUP_SP_T0
 	/* Swap TP and MSCRATCH */
-	csrrw	tp, CSR_MSCRATCH, tp
+	csrrw	PREG(tp), CSR_MSCRATCH, PREG(tp)
 
 	/* Save T0 in scratch space */
-	REG_S	t0, SBI_SCRATCH_TMP0_OFFSET(tp)
+	REG_S	REG(t0), SBI_SCRATCH_TMP0_OFFSET(PREG(tp))
 
 	/*
 	 * Set T0 to appropriate exception stack
@@ -477,79 +477,79 @@ memcmp:
 	xor	t0, tp, t0
 
 	/* Save original SP on exception stack */
-	REG_S	sp, (SBI_TRAP_REGS_OFFSET(sp) - SBI_TRAP_CONTEXT_SIZE)(t0)
+	PREG_S	PREG(sp), (SBI_TRAP_REGS_OFFSET(sp) - SBI_TRAP_CONTEXT_SIZE)(PREG(t0))
 
 	/* Set SP to exception stack and make room for trap context */
-	add	sp, t0, -(SBI_TRAP_CONTEXT_SIZE)
+	add	PREG(sp), PREG(t0), -(SBI_TRAP_CONTEXT_SIZE)
 
 	/* Restore T0 from scratch space */
-	REG_L	t0, SBI_SCRATCH_TMP0_OFFSET(tp)
+	REG_L	REG(t0), SBI_SCRATCH_TMP0_OFFSET(PREG(tp))
 
 	/* Save T0 on stack */
-	REG_S	t0, SBI_TRAP_REGS_OFFSET(t0)(sp)
+	REG_S	REG(t0), SBI_TRAP_REGS_OFFSET(t0)(PREG(sp))
 
 	/* Swap TP and MSCRATCH */
-	csrrw	tp, CSR_MSCRATCH, tp
+	csrrw	PREG(tp), CSR_MSCRATCH, PREG(tp)
 .endm
 
 .macro	TRAP_SAVE_MEPC_MSTATUS have_mstatush
 	/* Save MEPC and MSTATUS CSRs */
-	csrr	t0, CSR_MEPC
-	REG_S	t0, SBI_TRAP_REGS_OFFSET(mepc)(sp)
+	csrr	PREG(t0), CSR_MEPC
+	PREG_S	PREG(t0), SBI_TRAP_REGS_OFFSET(mepc)(PREG(sp))
 	csrr	t0, CSR_MSTATUS
-	REG_S	t0, SBI_TRAP_REGS_OFFSET(mstatus)(sp)
+	REG_S	REG(t0), SBI_TRAP_REGS_OFFSET(mstatus)(PREG(sp))
 	.if \have_mstatush
 	csrr	t0, CSR_MSTATUSH
-	REG_S	t0, SBI_TRAP_REGS_OFFSET(mstatusH)(sp)
+	REG_S	REG(t0), SBI_TRAP_REGS_OFFSET(mstatusH)(PREG(sp))
 	.else
-	REG_S	zero, SBI_TRAP_REGS_OFFSET(mstatusH)(sp)
+	REG_S	REG_ZERO, SBI_TRAP_REGS_OFFSET(mstatusH)(PREG(sp))
 	.endif
 .endm
 
 .macro	TRAP_SAVE_GENERAL_REGS_EXCEPT_SP_T0
 	/* Save all general regisers except SP and T0 */
-	REG_S	zero, SBI_TRAP_REGS_OFFSET(zero)(sp)
-	REG_S	ra, SBI_TRAP_REGS_OFFSET(ra)(sp)
-	REG_S	gp, SBI_TRAP_REGS_OFFSET(gp)(sp)
-	REG_S	tp, SBI_TRAP_REGS_OFFSET(tp)(sp)
-	REG_S	t1, SBI_TRAP_REGS_OFFSET(t1)(sp)
-	REG_S	t2, SBI_TRAP_REGS_OFFSET(t2)(sp)
-	REG_S	s0, SBI_TRAP_REGS_OFFSET(s0)(sp)
-	REG_S	s1, SBI_TRAP_REGS_OFFSET(s1)(sp)
-	REG_S	a0, SBI_TRAP_REGS_OFFSET(a0)(sp)
-	REG_S	a1, SBI_TRAP_REGS_OFFSET(a1)(sp)
-	REG_S	a2, SBI_TRAP_REGS_OFFSET(a2)(sp)
-	REG_S	a3, SBI_TRAP_REGS_OFFSET(a3)(sp)
-	REG_S	a4, SBI_TRAP_REGS_OFFSET(a4)(sp)
-	REG_S	a5, SBI_TRAP_REGS_OFFSET(a5)(sp)
-	REG_S	a6, SBI_TRAP_REGS_OFFSET(a6)(sp)
-	REG_S	a7, SBI_TRAP_REGS_OFFSET(a7)(sp)
-	REG_S	s2, SBI_TRAP_REGS_OFFSET(s2)(sp)
-	REG_S	s3, SBI_TRAP_REGS_OFFSET(s3)(sp)
-	REG_S	s4, SBI_TRAP_REGS_OFFSET(s4)(sp)
-	REG_S	s5, SBI_TRAP_REGS_OFFSET(s5)(sp)
-	REG_S	s6, SBI_TRAP_REGS_OFFSET(s6)(sp)
-	REG_S	s7, SBI_TRAP_REGS_OFFSET(s7)(sp)
-	REG_S	s8, SBI_TRAP_REGS_OFFSET(s8)(sp)
-	REG_S	s9, SBI_TRAP_REGS_OFFSET(s9)(sp)
-	REG_S	s10, SBI_TRAP_REGS_OFFSET(s10)(sp)
-	REG_S	s11, SBI_TRAP_REGS_OFFSET(s11)(sp)
-	REG_S	t3, SBI_TRAP_REGS_OFFSET(t3)(sp)
-	REG_S	t4, SBI_TRAP_REGS_OFFSET(t4)(sp)
-	REG_S	t5, SBI_TRAP_REGS_OFFSET(t5)(sp)
-	REG_S	t6, SBI_TRAP_REGS_OFFSET(t6)(sp)
+	REG_S	REG_ZERO, SBI_TRAP_REGS_OFFSET(zero)(PREG(sp))
+	REG_S	REG(ra), SBI_TRAP_REGS_OFFSET(ra)(PREG(sp))
+	REG_S	REG(gp), SBI_TRAP_REGS_OFFSET(gp)(PREG(sp))
+	REG_S	REG(tp), SBI_TRAP_REGS_OFFSET(tp)(PREG(sp))
+	REG_S	REG(t1), SBI_TRAP_REGS_OFFSET(t1)(PREG(sp))
+	REG_S	REG(t2), SBI_TRAP_REGS_OFFSET(t2)(PREG(sp))
+	REG_S	REG(s0), SBI_TRAP_REGS_OFFSET(s0)(PREG(sp))
+	REG_S	REG(s1), SBI_TRAP_REGS_OFFSET(s1)(PREG(sp))
+	REG_S	REG(a0), SBI_TRAP_REGS_OFFSET(a0)(PREG(sp))
+	REG_S	REG(a1), SBI_TRAP_REGS_OFFSET(a1)(PREG(sp))
+	REG_S	REG(a2), SBI_TRAP_REGS_OFFSET(a2)(PREG(sp))
+	REG_S	REG(a3), SBI_TRAP_REGS_OFFSET(a3)(PREG(sp))
+	REG_S	REG(a4), SBI_TRAP_REGS_OFFSET(a4)(PREG(sp))
+	REG_S	REG(a5), SBI_TRAP_REGS_OFFSET(a5)(PREG(sp))
+	REG_S	REG(a6), SBI_TRAP_REGS_OFFSET(a6)(PREG(sp))
+	REG_S	REG(a7), SBI_TRAP_REGS_OFFSET(a7)(PREG(sp))
+	REG_S	REG(s2), SBI_TRAP_REGS_OFFSET(s2)(PREG(sp))
+	REG_S	REG(s3), SBI_TRAP_REGS_OFFSET(s3)(PREG(sp))
+	REG_S	REG(s4), SBI_TRAP_REGS_OFFSET(s4)(PREG(sp))
+	REG_S	REG(s5), SBI_TRAP_REGS_OFFSET(s5)(PREG(sp))
+	REG_S	REG(s6), SBI_TRAP_REGS_OFFSET(s6)(PREG(sp))
+	REG_S	REG(s7), SBI_TRAP_REGS_OFFSET(s7)(PREG(sp))
+	REG_S	REG(s8), SBI_TRAP_REGS_OFFSET(s8)(PREG(sp))
+	REG_S	REG(s9), SBI_TRAP_REGS_OFFSET(s9)(PREG(sp))
+	REG_S	REG(s10), SBI_TRAP_REGS_OFFSET(s10)(PREG(sp))
+	REG_S	REG(s11), SBI_TRAP_REGS_OFFSET(s11)(PREG(sp))
+	REG_S	REG(t3), SBI_TRAP_REGS_OFFSET(t3)(PREG(sp))
+	REG_S	REG(t4), SBI_TRAP_REGS_OFFSET(t4)(PREG(sp))
+	REG_S	REG(t5), SBI_TRAP_REGS_OFFSET(t5)(PREG(sp))
+	REG_S	REG(t6), SBI_TRAP_REGS_OFFSET(t6)(PREG(sp))
 .endm
 
 .macro	TRAP_SAVE_INFO have_mstatush have_h_extension
 	csrr	t0, CSR_MCAUSE
-	REG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(cause))(sp)
+	XREG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(cause))(PREG(sp))
 	csrr	t0, CSR_MTVAL
-	REG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tval))(sp)
+	XREG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tval))(PREG(sp))
 .if \have_h_extension
 	csrr	t0, CSR_MTVAL2
-	REG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tval2))(sp)
+	XREG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tval2))(PREG(sp))
 	csrr	t0, CSR_MTINST
-	REG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tinst))(sp)
+	XREG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tinst))(PREG(sp))
 	.if \have_mstatush
 	csrr	t0, CSR_MSTATUSH
 	srli	t0, t0, MSTATUSH_GVA_SHIFT
@@ -559,11 +559,11 @@ memcmp:
 	.endif
 	and	t0, t0, 0x1
 .else
-	REG_S	zero, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tval2))(sp)
-	REG_S	zero, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tinst))(sp)
+	XREG_S	zero, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tval2))(PREG(sp))
+	XREG_S	zero, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tinst))(PREG(sp))
 	li	t0, 0
 .endif
-	REG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(gva))(sp)
+	XREG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(gva))(PREG(sp))
 .endm
 
 .macro	TRAP_CALL_C_ROUTINE
@@ -574,55 +574,55 @@ memcmp:
 
 .macro	TRAP_RESTORE_GENERAL_REGS_EXCEPT_A0_T0
 	/* Restore all general regisers except A0 and T0 */
-	REG_L	ra, SBI_TRAP_REGS_OFFSET(ra)(a0)
-	REG_L	sp, SBI_TRAP_REGS_OFFSET(sp)(a0)
-	REG_L	gp, SBI_TRAP_REGS_OFFSET(gp)(a0)
-	REG_L	tp, SBI_TRAP_REGS_OFFSET(tp)(a0)
-	REG_L	t1, SBI_TRAP_REGS_OFFSET(t1)(a0)
-	REG_L	t2, SBI_TRAP_REGS_OFFSET(t2)(a0)
-	REG_L	s0, SBI_TRAP_REGS_OFFSET(s0)(a0)
-	REG_L	s1, SBI_TRAP_REGS_OFFSET(s1)(a0)
-	REG_L	a1, SBI_TRAP_REGS_OFFSET(a1)(a0)
-	REG_L	a2, SBI_TRAP_REGS_OFFSET(a2)(a0)
-	REG_L	a3, SBI_TRAP_REGS_OFFSET(a3)(a0)
-	REG_L	a4, SBI_TRAP_REGS_OFFSET(a4)(a0)
-	REG_L	a5, SBI_TRAP_REGS_OFFSET(a5)(a0)
-	REG_L	a6, SBI_TRAP_REGS_OFFSET(a6)(a0)
-	REG_L	a7, SBI_TRAP_REGS_OFFSET(a7)(a0)
-	REG_L	s2, SBI_TRAP_REGS_OFFSET(s2)(a0)
-	REG_L	s3, SBI_TRAP_REGS_OFFSET(s3)(a0)
-	REG_L	s4, SBI_TRAP_REGS_OFFSET(s4)(a0)
-	REG_L	s5, SBI_TRAP_REGS_OFFSET(s5)(a0)
-	REG_L	s6, SBI_TRAP_REGS_OFFSET(s6)(a0)
-	REG_L	s7, SBI_TRAP_REGS_OFFSET(s7)(a0)
-	REG_L	s8, SBI_TRAP_REGS_OFFSET(s8)(a0)
-	REG_L	s9, SBI_TRAP_REGS_OFFSET(s9)(a0)
-	REG_L	s10, SBI_TRAP_REGS_OFFSET(s10)(a0)
-	REG_L	s11, SBI_TRAP_REGS_OFFSET(s11)(a0)
-	REG_L	t3, SBI_TRAP_REGS_OFFSET(t3)(a0)
-	REG_L	t4, SBI_TRAP_REGS_OFFSET(t4)(a0)
-	REG_L	t5, SBI_TRAP_REGS_OFFSET(t5)(a0)
-	REG_L	t6, SBI_TRAP_REGS_OFFSET(t6)(a0)
+	REG_L	REG(ra), SBI_TRAP_REGS_OFFSET(ra)(PREG(a0))
+	REG_L	REG(sp), SBI_TRAP_REGS_OFFSET(sp)(PREG(a0))
+	REG_L	REG(gp), SBI_TRAP_REGS_OFFSET(gp)(PREG(a0))
+	REG_L	REG(tp), SBI_TRAP_REGS_OFFSET(tp)(PREG(a0))
+	REG_L	REG(t1), SBI_TRAP_REGS_OFFSET(t1)(PREG(a0))
+	REG_L	REG(t2), SBI_TRAP_REGS_OFFSET(t2)(PREG(a0))
+	REG_L	REG(s0), SBI_TRAP_REGS_OFFSET(s0)(PREG(a0))
+	REG_L	REG(s1), SBI_TRAP_REGS_OFFSET(s1)(PREG(a0))
+	REG_L	REG(a1), SBI_TRAP_REGS_OFFSET(a1)(PREG(a0))
+	REG_L	REG(a2), SBI_TRAP_REGS_OFFSET(a2)(PREG(a0))
+	REG_L	REG(a3), SBI_TRAP_REGS_OFFSET(a3)(PREG(a0))
+	REG_L	REG(a4), SBI_TRAP_REGS_OFFSET(a4)(PREG(a0))
+	REG_L	REG(a5), SBI_TRAP_REGS_OFFSET(a5)(PREG(a0))
+	REG_L	REG(a6), SBI_TRAP_REGS_OFFSET(a6)(PREG(a0))
+	REG_L	REG(a7), SBI_TRAP_REGS_OFFSET(a7)(PREG(a0))
+	REG_L	REG(s2), SBI_TRAP_REGS_OFFSET(s2)(PREG(a0))
+	REG_L	REG(s3), SBI_TRAP_REGS_OFFSET(s3)(PREG(a0))
+	REG_L	REG(s4), SBI_TRAP_REGS_OFFSET(s4)(PREG(a0))
+	REG_L	REG(s5), SBI_TRAP_REGS_OFFSET(s5)(PREG(a0))
+	REG_L	REG(s6), SBI_TRAP_REGS_OFFSET(s6)(PREG(a0))
+	REG_L	REG(s7), SBI_TRAP_REGS_OFFSET(s7)(PREG(a0))
+	REG_L	REG(s8), SBI_TRAP_REGS_OFFSET(s8)(PREG(a0))
+	REG_L	REG(s9), SBI_TRAP_REGS_OFFSET(s9)(PREG(a0))
+	REG_L	REG(s10), SBI_TRAP_REGS_OFFSET(s10)(PREG(a0))
+	REG_L	REG(s11), SBI_TRAP_REGS_OFFSET(s11)(PREG(a0))
+	REG_L	REG(t3), SBI_TRAP_REGS_OFFSET(t3)(PREG(a0))
+	REG_L	REG(t4), SBI_TRAP_REGS_OFFSET(t4)(PREG(a0))
+	REG_L	REG(t5), SBI_TRAP_REGS_OFFSET(t5)(PREG(a0))
+	REG_L	REG(t6), SBI_TRAP_REGS_OFFSET(t6)(PREG(a0))
 .endm
 
 .macro	TRAP_RESTORE_MEPC_MSTATUS have_mstatush
 	/* Restore MEPC and MSTATUS CSRs */
-	REG_L	t0, SBI_TRAP_REGS_OFFSET(mepc)(a0)
-	csrw	CSR_MEPC, t0
-	REG_L	t0, SBI_TRAP_REGS_OFFSET(mstatus)(a0)
+	PREG_L	PREG(t0), SBI_TRAP_REGS_OFFSET(mepc)(PREG(a0))
+	csrw	CSR_MEPC, PREG(t0)
+	REG_L	REG(t0), SBI_TRAP_REGS_OFFSET(mstatus)(PREG(a0))
 	csrw	CSR_MSTATUS, t0
 	.if \have_mstatush
-	REG_L	t0, SBI_TRAP_REGS_OFFSET(mstatusH)(a0)
+	REG_L	REG(t0), SBI_TRAP_REGS_OFFSET(mstatusH)(PREG(a0))
 	csrw	CSR_MSTATUSH, t0
 	.endif
 .endm
 
 .macro TRAP_RESTORE_A0_T0
 	/* Restore T0 */
-	REG_L	t0, SBI_TRAP_REGS_OFFSET(t0)(a0)
+	REG_L	REG(t0), SBI_TRAP_REGS_OFFSET(t0)(PREG(a0))
 
 	/* Restore A0 */
-	REG_L	a0, SBI_TRAP_REGS_OFFSET(a0)(a0)
+	REG_L	REG(a0), SBI_TRAP_REGS_OFFSET(a0)(PREG(a0))
 .endm
 
 	.section .entry, "ax", %progbits
