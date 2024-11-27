@@ -13,6 +13,7 @@
 #include <sbi/sbi_scratch.h>
 #include <sbi/sbi_trap.h>
 #include <sbi/sbi_unpriv.h>
+#include <sbi/sbi_types.h>
 
 /**
  * a3 must a pointer to the sbi_trap_info and a4 is used as a temporary
@@ -22,13 +23,13 @@
 	type sbi_load_##type(const type *addr,                                \
 			     struct sbi_trap_info *trap)                      \
 	{                                                                     \
-		register ulong tinfo asm("a3");                               \
+		register uintptr_t tinfo asm(PREG(a3));                       \
 		register ulong mstatus = 0;                                   \
-		register ulong mtvec = sbi_hart_expected_trap_addr();         \
+		register uintptr_t mtvec = sbi_hart_expected_trap_addr();     \
 		type ret = 0;                                                 \
 		trap->cause = 0;                                              \
 		asm volatile(                                                 \
-			"add %[tinfo], %[taddr], zero\n"                      \
+			"mv %[tinfo], %[taddr]\n"                             \
 			"csrrw %[mtvec], " STR(CSR_MTVEC) ", %[mtvec]\n"      \
 			"csrrs %[mstatus], " STR(CSR_MSTATUS) ", %[mprv]\n"   \
 			".option push\n"                                      \
@@ -37,10 +38,10 @@
 			".option pop\n"                                       \
 			"csrw " STR(CSR_MSTATUS) ", %[mstatus]\n"             \
 			"csrw " STR(CSR_MTVEC) ", %[mtvec]"                   \
-		    : [mstatus] "+&r"(mstatus), [mtvec] "+&r"(mtvec),         \
-		      [tinfo] "+&r"(tinfo), [ret] "=&r"(ret)                  \
+		    : [mstatus] "+&r"(mstatus), [mtvec] "+&"PTR_REG(mtvec),   \
+		      [tinfo] "+&"PTR_REG(tinfo), [ret] "=&r"(ret)            \
 		    : [addr] "m"(*addr), [mprv] "r"(MSTATUS_MPRV),            \
-		      [taddr] "r"((ulong)trap)                                \
+		      [taddr] PTR_REG((uintptr_t)trap)                        \
 		    : "a4", "memory");                                        \
 		return ret;                                                   \
 	}
@@ -49,12 +50,12 @@
 	void sbi_store_##type(type *addr, type val,                           \
 			      struct sbi_trap_info *trap)                     \
 	{                                                                     \
-		register ulong tinfo asm("a3") = (ulong)trap;                 \
+		register uintptr_t tinfo asm(PREG(a3)) = (uintptr_t)trap;     \
 		register ulong mstatus = 0;                                   \
-		register ulong mtvec = sbi_hart_expected_trap_addr();         \
+		register uintptr_t mtvec = sbi_hart_expected_trap_addr();     \
 		trap->cause = 0;                                              \
 		asm volatile(                                                 \
-			"add %[tinfo], %[taddr], zero\n"                      \
+			"mv %[tinfo], %[taddr]\n"                             \
 			"csrrw %[mtvec], " STR(CSR_MTVEC) ", %[mtvec]\n"      \
 			"csrrs %[mstatus], " STR(CSR_MSTATUS) ", %[mprv]\n"   \
 			".option push\n"                                      \
@@ -63,10 +64,10 @@
 			".option pop\n"                                       \
 			"csrw " STR(CSR_MSTATUS) ", %[mstatus]\n"             \
 			"csrw " STR(CSR_MTVEC) ", %[mtvec]"                   \
-		    : [mstatus] "+&r"(mstatus), [mtvec] "+&r"(mtvec),         \
-		      [tinfo] "+&r"(tinfo)                                    \
+		    : [mstatus] "+&r"(mstatus), [mtvec] "+&"PTR_REG(mtvec),   \
+		      [tinfo] "+&"PTR_REG(tinfo)                              \
 		    : [addr] "m"(*addr), [mprv] "r"(MSTATUS_MPRV),            \
-		      [val] "r"(val), [taddr] "r"((ulong)trap)                \
+		      [val] "r"(val), [taddr] PTR_REG((uintptr_t)trap)        \
 		    : "a4", "memory");                                        \
 	}
 
@@ -116,18 +117,18 @@ void sbi_store_u64(u64 *addr, u64 val,
 # error "Unexpected __riscv_xlen"
 #endif
 
-ulong sbi_get_insn(ulong mepc, struct sbi_trap_info *trap)
+ulong sbi_get_insn(uintptr_t mepc, struct sbi_trap_info *trap)
 {
-	register ulong tinfo asm("a3");
+	register uintptr_t tinfo asm(PREG(a3));
 	register ulong ttmp asm("a4");
 	register ulong mstatus = 0;
-	register ulong mtvec = sbi_hart_expected_trap_addr();
+	register uintptr_t mtvec = sbi_hart_expected_trap_addr();
 	ulong insn = 0;
 
 	trap->cause = 0;
 
 	asm volatile(
-	    "add %[tinfo], %[taddr], zero\n"
+	    "mv %[tinfo], %[taddr]\n"
 	    "csrrw %[mtvec], " STR(CSR_MTVEC) ", %[mtvec]\n"
 	    "csrrs %[mstatus], " STR(CSR_MSTATUS) ", %[mprv]\n"
 	    "lhu %[insn], (%[addr])\n"
@@ -139,11 +140,11 @@ ulong sbi_get_insn(ulong mepc, struct sbi_trap_info *trap)
 	    "add %[insn], %[insn], %[ttmp]\n"
 	    "2: csrw " STR(CSR_MSTATUS) ", %[mstatus]\n"
 	    "csrw " STR(CSR_MTVEC) ", %[mtvec]"
-	    : [mstatus] "+&r"(mstatus), [mtvec] "+&r"(mtvec),
-	      [tinfo] "+&r"(tinfo), [ttmp] "+&r"(ttmp),
+	    : [mstatus] "+&r"(mstatus), [mtvec] "+&"PTR_REG(mtvec),
+	      [tinfo] "+&"PTR_REG(tinfo), [ttmp] "+&r"(ttmp),
 	      [insn] "=&r"(insn)
 	    : [mprv] "r"(MSTATUS_MPRV | MSTATUS_MXR),
-	      [taddr] "r"((ulong)trap), [addr] "r"(mepc)
+	      [taddr] PTR_REG((uintptr_t)trap), [addr] PTR_REG(mepc)
 	    : "memory");
 
 	switch (trap->cause) {

@@ -36,6 +36,6 @@ DECLARE_UNPRIVILEGED_LOAD_FUNCTION(u64)
 DECLARE_UNPRIVILEGED_STORE_FUNCTION(u64)
 DECLARE_UNPRIVILEGED_LOAD_FUNCTION(ulong)
 
-ulong sbi_get_insn(ulong mepc, struct sbi_trap_info *trap);
+ulong sbi_get_insn(uintptr_t mepc, struct sbi_trap_info *trap);
 
 #endif
