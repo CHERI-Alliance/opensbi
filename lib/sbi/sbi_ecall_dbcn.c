@@ -43,7 +43,7 @@ static int sbi_ecall_dbcn_handler(unsigned long extid, unsigned long funcid,
 			return SBI_ERR_FAILED;
 
 		if (!sbi_domain_check_addr_range(sbi_domain_thishart_ptr(),
-					regs->a1, regs->a0, smode,
+					(unsigned long)regs->a1, (unsigned long)regs->a0, smode,
 					SBI_DOMAIN_READ|SBI_DOMAIN_WRITE))
 			return SBI_ERR_INVALID_PARAM;
 		sbi_hart_map_saddr(regs->a1, regs->a0);
