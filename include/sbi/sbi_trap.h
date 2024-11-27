@@ -261,7 +261,7 @@ static inline struct sbi_trap_context *sbi_trap_get_context(struct sbi_scratch *
 static inline void sbi_trap_set_context(struct sbi_scratch *scratch,
 					struct sbi_trap_context *tcntx)
 {
-	scratch->trap_context = (unsigned long)tcntx;
+	scratch->trap_context = (uintptr_t)tcntx;
 }
 
 struct sbi_trap_context *sbi_trap_handler(struct sbi_trap_context *tcntx);

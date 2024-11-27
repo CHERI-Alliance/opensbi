@@ -144,8 +144,8 @@ int sbi_hsm_hart_interruptible_mask(const struct sbi_domain *dom,
 void __noreturn sbi_hsm_hart_start_finish(struct sbi_scratch *scratch,
 					  u32 hartid)
 {
-	unsigned long next_arg1;
-	unsigned long next_addr;
+	uintptr_t next_arg1;
+	uintptr_t next_addr;
 	unsigned long next_mode;
 	struct sbi_hsm_data *hdata = sbi_scratch_offset_ptr(scratch,
 							    hart_data_offset);
