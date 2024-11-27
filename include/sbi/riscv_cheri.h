@@ -9,6 +9,7 @@
 #if defined(__riscv_zcheripurecap)
 #include <cheriintrin.h>
 #endif
+#include <sbi/sbi_types.h>
 #else /* __ASSEMBLER__ */
 /* Capability permissions definition for assembly */
 #if defined(__riscv_zcheripurecap)
@@ -38,4 +39,42 @@
 #define CHERI_PERM_DATA			(~CHERI_PERM_EXECUTE)
 /* Capability permissions for IO*/
 #define CHERI_PERM_IO			(~(CHERI_PERM_EXECUTE | CHERI_PERM_CAP))
+
+#ifndef __ASSEMBLER__
+#if defined(__CHERI_PURE_CAPABILITY__)
+extern void* cheri_infinite_cap;
+
+static inline void *cheri_infinite_cap_get(void)
+{
+	return cheri_infinite_cap;
+}
+
+static inline void *cheri_build_cap_rw(unsigned long base, unsigned long size)
+{
+	void *ptr = cheri_address_set(cheri_infinite_cap_get(), base);
+	ptr = cheri_bounds_set(ptr, size);
+	ptr = cheri_perms_and(ptr, CHERI_PERM_DATA);
+	ptr = cheri_is_invalid(ptr) ? NULL : ptr;
+
+	return (void *)ptr;
+}
+
+static inline void *cheri_build_cap_r(unsigned long base, unsigned long size)
+{
+	void *ptr = cheri_address_set(cheri_infinite_cap_get(), base);
+	ptr = cheri_bounds_set(ptr, size);
+	ptr = cheri_perms_and(ptr, CHERI_PERM_R_DATA);
+	ptr = cheri_is_invalid(ptr) ? NULL : ptr;
+
+	return (void *)ptr;
+}
+
+static inline void *cheri_build_cap_inf(unsigned long offset)
+{
+	void *ptr = cheri_address_set(cheri_infinite_cap_get(), offset);
+	return (void *)ptr;
+}
+#endif
+#endif /* __ASSEMBLER__ */
+
 #endif /* __RISCV_CHERI_H__ */
