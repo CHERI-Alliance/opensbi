@@ -45,6 +45,10 @@ SECTIONS
 		*(.rodata .rodata.*)
 		. = ALIGN(8);
 		PROVIDE(_rodata_end = .);
+
+		PROVIDE(__cap_relocs_start = .);
+		*(__cap_relocs)
+		PROVIDE(__cap_relocs_end = .);
 	}
 
 	/* End of the read-only data sections */
@@ -61,6 +65,8 @@ SECTIONS
 		*(.data.*)
 		*(.readmostly.data)
 		*(*.data)
+		. = ALIGN(16);
+		*(.captable)
 		. = ALIGN(8);
 
 		PROVIDE(_data_end = .);
