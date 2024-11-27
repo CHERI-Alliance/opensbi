@@ -14,6 +14,7 @@
 #include <sbi_utils/fdt/fdt_helper.h>
 #include <sbi_utils/timer/fdt_timer.h>
 #include <sbi_utils/timer/aclint_mtimer.h>
+#include <sbi/riscv_io.h>
 
 struct timer_mtimer_quirks {
 	bool		is_clint;
@@ -62,24 +63,33 @@ static int timer_mtimer_cold_init(void *fdt, int nodeoff,
 	}
 
 	if (is_clint) { /* SiFive CLINT */
+		unsigned long mtimecmp_addr, mtimecmp_size;
+		unsigned long mtime_addr, mtime_size;
 		/* Set CLINT addresses */
-		mt->mtimecmp_addr = addr[0] + ACLINT_DEFAULT_MTIMECMP_OFFSET;
-		mt->mtimecmp_size = ACLINT_DEFAULT_MTIMECMP_SIZE;
+		mtimecmp_addr = addr[0] + ACLINT_DEFAULT_MTIMECMP_OFFSET;
+		mtimecmp_size = ACLINT_DEFAULT_MTIMECMP_SIZE;
 		if (!quirks->clint_without_mtime) {
-			mt->mtime_addr = addr[0] + ACLINT_DEFAULT_MTIME_OFFSET;
-			mt->mtime_size = size[0] - mt->mtimecmp_size;
+			mtime_addr = addr[0] + ACLINT_DEFAULT_MTIME_OFFSET;
+			mtime_size = size[0] - mt->mtimecmp_size;
 			/* Adjust MTIMER address and size for CLINT device */
-			mt->mtime_addr += quirks->clint_mtime_offset;
-			mt->mtime_size -= quirks->clint_mtime_offset;
+			mtime_addr += quirks->clint_mtime_offset;
+			mtime_size -= quirks->clint_mtime_offset;
 		} else {
-			mt->mtime_addr = mt->mtime_size = 0;
+			mtime_addr = mtime_size = 0;
 		}
-		mt->mtimecmp_addr += quirks->clint_mtime_offset;
+		mtimecmp_addr += quirks->clint_mtime_offset;
+
+		mt->mtimecmp_addr = ioremap(mtimecmp_addr, mtimecmp_size);
+		mt->mtimecmp_size = mtimecmp_size;
+
+		mt->mtime_addr = ioremap(mtime_addr, mtime_size);
+		mt->mtime_size = mtime_size;
+
 	} else { /* RISC-V ACLINT MTIMER */
 		/* Set ACLINT MTIMER addresses */
-		mt->mtime_addr = addr[0];
+		mt->mtime_addr = ioremap(addr[0], size[0]);
 		mt->mtime_size = size[0];
-		mt->mtimecmp_addr = addr[1];
+		mt->mtimecmp_addr = ioremap(addr[1], size[1]);
 		mt->mtimecmp_size = size[1];
 	}
 

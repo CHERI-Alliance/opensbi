@@ -27,9 +27,9 @@
 struct aclint_mtimer_data {
 	/* Public details */
 	unsigned long mtime_freq;
-	unsigned long mtime_addr;
+	void *mtime_addr;
 	unsigned long mtime_size;
-	unsigned long mtimecmp_addr;
+	void *mtimecmp_addr;
 	unsigned long mtimecmp_size;
 	u32 first_hartid;
 	u32 hart_count;

@@ -10,6 +10,7 @@
 #include <sbi_utils/fdt/fdt_helper.h>
 #include <sbi_utils/timer/fdt_timer.h>
 #include <sbi_utils/timer/andes_plmt.h>
+#include <sbi/riscv_io.h>
 
 extern struct plmt_data plmt;
 
@@ -18,14 +19,16 @@ static int fdt_plmt_cold_timer_init(void *fdt, int nodeoff,
 {
 	int rc;
 	unsigned long plmt_base;
+	void *plmt_base_io;
 
 	rc = fdt_parse_plmt_node(fdt, nodeoff, &plmt_base, &plmt.size,
 				 &plmt.hart_count);
 	if (rc)
 		return rc;
 
-	plmt.time_val = (u64 *)plmt_base;
-	plmt.time_cmp = (u64 *)(plmt_base + 0x8);
+	plmt_base_io = ioremap(plmt_base, plmt.size);
+	plmt.time_val = (u64 *)plmt_base_io;
+	plmt.time_cmp = (u64 *)(plmt_base_io + 0x8);
 
 	rc = fdt_parse_timebase_frequency(fdt, &plmt.timer_freq);
 	if (rc)
