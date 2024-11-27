@@ -30,7 +30,7 @@ struct aplic_delegate_data {
 };
 
 struct aplic_data {
-	unsigned long addr;
+	void *addr;
 	unsigned long size;
 	unsigned long num_idc;
 	unsigned long num_source;

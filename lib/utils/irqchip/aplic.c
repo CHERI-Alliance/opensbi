@@ -268,7 +268,7 @@ int aplic_cold_irqchip_init(struct aplic_data *aplic)
 	    ((first_deleg_irq < last_deleg_irq) &&
 	    (last_deleg_irq == aplic->num_source) &&
 	    (first_deleg_irq == 1))) {
-		sbi_domain_memregion_init(aplic->addr, aplic->size,
+		sbi_domain_memregion_init((unsigned long)aplic->addr, aplic->size,
 					  (SBI_DOMAIN_MEMREGION_MMIO |
 					   SBI_DOMAIN_MEMREGION_M_READABLE |
 					   SBI_DOMAIN_MEMREGION_M_WRITABLE),

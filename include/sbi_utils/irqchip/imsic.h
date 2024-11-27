@@ -19,7 +19,7 @@
 #define IMSIC_MAX_REGS			16
 
 struct imsic_regs {
-	unsigned long addr;
+	void *addr;
 	unsigned long size;
 };
 

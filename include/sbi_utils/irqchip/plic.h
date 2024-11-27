@@ -13,7 +13,7 @@
 #include <sbi/sbi_types.h>
 
 struct plic_data {
-	unsigned long addr;
+	void *addr;
 	unsigned long size;
 	unsigned long num_src;
 };

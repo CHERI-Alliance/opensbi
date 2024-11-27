@@ -624,7 +624,7 @@ int fdt_parse_aplic_node(void *fdt, int nodeoff, struct aplic_data *aplic)
 	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &reg_addr, &reg_size);
 	if (rc < 0 || !reg_addr || !reg_size)
 		return SBI_ENODEV;
-	aplic->addr = reg_addr;
+	aplic->addr = ioremap(reg_addr, reg_size);
 	aplic->size = reg_size;
 
 	val = fdt_getprop(fdt, nodeoff, "riscv,num-sources", &len);
@@ -670,7 +670,7 @@ int fdt_parse_aplic_node(void *fdt, int nodeoff, struct aplic_data *aplic)
 					(2 * IMSIC_MMIO_PAGE_SHIFT))
 				return SBI_EINVAL;
 			aplic->msicfg_mmode.hhxs -= 24;
-			aplic->msicfg_mmode.base_addr = imsic.regs[0].addr;
+			aplic->msicfg_mmode.base_addr = (unsigned long )imsic.regs[0].addr;
 		} else {
 			goto aplic_msi_parent_done;
 		}
@@ -709,7 +709,7 @@ int fdt_parse_aplic_node(void *fdt, int nodeoff, struct aplic_data *aplic)
 					(2 * IMSIC_MMIO_PAGE_SHIFT))
 				return SBI_EINVAL;
 			aplic->msicfg_smode.hhxs -= 24;
-			aplic->msicfg_smode.base_addr = imsic.regs[0].addr;
+			aplic->msicfg_smode.base_addr = (unsigned long)imsic.regs[0].addr;
 		}
 	}
 aplic_msi_parent_done:
@@ -860,7 +860,7 @@ int fdt_parse_imsic_node(void *fdt, int nodeoff, struct imsic_data *imsic)
 					    &reg_addr, &reg_size);
 		if (rc < 0 || !reg_addr || !reg_size)
 			break;
-		regs->addr = reg_addr;
+		regs->addr = ioremap(reg_addr, reg_size);
 		regs->size = reg_size;
 	}
 	if (!imsic->regs[0].size)
@@ -882,7 +882,7 @@ int fdt_parse_plic_node(void *fdt, int nodeoffset, struct plic_data *plic)
 				    &reg_addr, &reg_size);
 	if (rc < 0 || !reg_addr || !reg_size)
 		return SBI_ENODEV;
-	plic->addr = reg_addr;
+	plic->addr = ioremap(reg_addr, reg_size);
 	plic->size = reg_size;
 
 	val = fdt_getprop(fdt, nodeoffset, "riscv,ndev", &len);
