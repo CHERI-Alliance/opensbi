@@ -42,7 +42,7 @@
 #define SIFIVE_I2C_READ_BIT	(1 << 0)
 
 struct sifive_i2c_adapter {
-	unsigned long addr;
+	void *addr;
 	struct i2c_adapter adapter;
 };
 
@@ -235,19 +235,19 @@ static int sifive_i2c_init(void *fdt, int nodeoff,
 {
 	int rc;
 	struct sifive_i2c_adapter *adapter;
-	uint64_t addr;
+	uint64_t addr, size;
 
 	adapter = sbi_zalloc(sizeof(*adapter));
 	if (!adapter)
 		return SBI_ENOMEM;
 
-	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, NULL);
+	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, &size);
 	if (rc) {
 		sbi_free(adapter);
 		return rc;
 	}
 
-	adapter->addr = addr;
+	adapter->addr = ioremap(addr, size);
 	adapter->adapter.id = nodeoff;
 	adapter->adapter.write = sifive_i2c_adapter_write;
 	adapter->adapter.read = sifive_i2c_adapter_read;

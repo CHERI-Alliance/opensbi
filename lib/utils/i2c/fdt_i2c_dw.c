@@ -20,19 +20,19 @@ static int fdt_dw_i2c_init(void *fdt, int nodeoff,
 {
 	int rc;
 	struct dw_i2c_adapter *adapter;
-	u64 addr;
+	u64 addr, size;
 
 	adapter = sbi_zalloc(sizeof(*adapter));
 	if (!adapter)
 		return SBI_ENOMEM;
 
-	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, NULL);
+	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, &size);
 	if (rc) {
 		sbi_free(adapter);
 		return rc;
 	}
 
-	adapter->addr = addr;
+	adapter->addr = ioremap(addr, size);
 
 	rc = dw_i2c_init(&adapter->adapter, nodeoff);
 	if (rc) {

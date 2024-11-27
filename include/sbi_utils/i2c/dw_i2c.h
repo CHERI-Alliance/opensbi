@@ -14,7 +14,7 @@
 int dw_i2c_init(struct i2c_adapter *, int nodeoff);
 
 struct dw_i2c_adapter {
-	unsigned long addr;
+	void *addr;
 	struct i2c_adapter adapter;
 };
 
