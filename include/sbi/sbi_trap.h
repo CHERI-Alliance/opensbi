@@ -110,7 +110,7 @@
 #define SBI_TRAP_REGS_SIZE SBI_TRAP_REGS_OFFSET(last)
 
 /** Get offset of member with name 'x' in sbi_trap_info */
-#define SBI_TRAP_INFO_OFFSET(x) ((SBI_TRAP_INFO_##x) * __SIZEOF_POINTER__)
+#define SBI_TRAP_INFO_OFFSET(x) ((SBI_TRAP_INFO_##x) * __SIZEOF_LONG__)
 /** Size (in bytes) of sbi_trap_info */
 #define SBI_TRAP_INFO_SIZE SBI_TRAP_INFO_OFFSET(last)
 
@@ -127,75 +127,75 @@
 /** Representation of register state at time of trap/interrupt */
 struct sbi_trap_regs {
 	/** zero register state */
-	unsigned long zero;
+	uintptr_t zero;
 	/** ra register state */
-	unsigned long ra;
+	uintptr_t ra;
 	/** sp register state */
-	unsigned long sp;
+	uintptr_t sp;
 	/** gp register state */
-	unsigned long gp;
+	uintptr_t gp;
 	/** tp register state */
-	unsigned long tp;
+	uintptr_t tp;
 	/** t0 register state */
-	unsigned long t0;
+	uintptr_t t0;
 	/** t1 register state */
-	unsigned long t1;
+	uintptr_t t1;
 	/** t2 register state */
-	unsigned long t2;
+	uintptr_t t2;
 	/** s0 register state */
-	unsigned long s0;
+	uintptr_t s0;
 	/** s1 register state */
-	unsigned long s1;
+	uintptr_t s1;
 	/** a0 register state */
-	unsigned long a0;
+	uintptr_t a0;
 	/** a1 register state */
-	unsigned long a1;
+	uintptr_t a1;
 	/** a2 register state */
-	unsigned long a2;
+	uintptr_t a2;
 	/** a3 register state */
-	unsigned long a3;
+	uintptr_t a3;
 	/** a4 register state */
-	unsigned long a4;
+	uintptr_t a4;
 	/** a5 register state */
-	unsigned long a5;
+	uintptr_t a5;
 	/** a6 register state */
-	unsigned long a6;
+	uintptr_t a6;
 	/** a7 register state */
-	unsigned long a7;
+	uintptr_t a7;
 	/** s2 register state */
-	unsigned long s2;
+	uintptr_t s2;
 	/** s3 register state */
-	unsigned long s3;
+	uintptr_t s3;
 	/** s4 register state */
-	unsigned long s4;
+	uintptr_t s4;
 	/** s5 register state */
-	unsigned long s5;
+	uintptr_t s5;
 	/** s6 register state */
-	unsigned long s6;
+	uintptr_t s6;
 	/** s7 register state */
-	unsigned long s7;
+	uintptr_t s7;
 	/** s8 register state */
-	unsigned long s8;
+	uintptr_t s8;
 	/** s9 register state */
-	unsigned long s9;
+	uintptr_t s9;
 	/** s10 register state */
-	unsigned long s10;
+	uintptr_t s10;
 	/** s11 register state */
-	unsigned long s11;
+	uintptr_t s11;
 	/** t3 register state */
-	unsigned long t3;
+	uintptr_t t3;
 	/** t4 register state */
-	unsigned long t4;
+	uintptr_t t4;
 	/** t5 register state */
-	unsigned long t5;
+	uintptr_t t5;
 	/** t6 register state */
-	unsigned long t6;
+	uintptr_t t6;
 	/** mepc register state */
-	unsigned long mepc;
+	uintptr_t mepc;
 	/** mstatus register state */
-	unsigned long mstatus;
+	uintptr_t mstatus;
 	/** mstatusH register state (only for 32-bit) */
-	unsigned long mstatusH;
+	uintptr_t mstatusH;
 };
 
 /** Representation of trap details */
