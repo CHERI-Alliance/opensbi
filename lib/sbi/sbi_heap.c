@@ -7,6 +7,7 @@
  *   Anup Patel<apatel@ventanamicro.com>
  */
 
+#include <sbi/riscv_cheri.h>
 #include <sbi/riscv_locks.h>
 #include <sbi/sbi_error.h>
 #include <sbi/sbi_heap.h>
@@ -20,15 +21,15 @@
 
 struct heap_node {
 	struct sbi_dlist head;
-	unsigned long addr;
+	uintptr_t addr;
 	unsigned long size;
 };
 
 struct heap_control {
 	spinlock_t lock;
-	unsigned long base;
+	uintptr_t base;
 	unsigned long size;
-	unsigned long hkbase;
+	uintptr_t hkbase;
 	unsigned long hksize;
 	struct sbi_dlist free_node_list;
 	struct sbi_dlist free_space_list;
@@ -67,11 +68,19 @@ void *sbi_malloc(size_t size)
 			n->size = size;
 			np->size -= size;
 			sbi_list_add_tail(&n->head, &hpctrl.used_space_list);
-			ret = (void *)n->addr;
+#if defined(__CHERI_PURE_CAPABILITY__)
+			ret = cheri_build_cap_rw(n->addr, size);
+#else
+			ret = (void *)(n->addr);
+#endif
 		} else if (size == np->size) {
 			sbi_list_del(&np->head);
 			sbi_list_add_tail(&np->head, &hpctrl.used_space_list);
-			ret = (void *)np->addr;
+#if defined(__CHERI_PURE_CAPABILITY__)
+			ret = cheri_build_cap_rw(n->addr, size);
+#else
+			ret = (void *)(n->addr);
+#endif
 		}
 	}
 
@@ -175,7 +184,13 @@ int sbi_heap_init(struct sbi_scratch *scratch)
 
 	/* Initialize heap control */
 	SPIN_LOCK_INIT(hpctrl.lock);
+#if defined(__CHERI_PURE_CAPABILITY__)
+	hpctrl.base =
+		(uintptr_t)cheri_build_cap_rw(scratch->fw_start + scratch->fw_heap_offset,
+					      scratch->fw_heap_size);
+#else
 	hpctrl.base = scratch->fw_start + scratch->fw_heap_offset;
+#endif
 	hpctrl.size = scratch->fw_heap_size;
 	hpctrl.hkbase = hpctrl.base;
 	hpctrl.hksize = hpctrl.size / HEAP_HOUSEKEEPING_FACTOR;
