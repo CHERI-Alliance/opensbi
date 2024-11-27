@@ -111,7 +111,7 @@ int fdt_parse_plmt_node(void *fdt, int nodeoffset, unsigned long *plmt_base,
 int fdt_parse_plicsw_node(void *fdt, int nodeoffset, unsigned long *plicsw_base,
 			  unsigned long *size, u32 *hart_count);
 
-int fdt_parse_compat_addr(void *fdt, uint64_t *addr,
+int fdt_parse_compat_addr_size(void *fdt, uint64_t *addr, uint64_t *size,
 			  const char *compatible);
 
 static inline void *fdt_get_address(void)

@@ -1147,7 +1147,7 @@ int fdt_parse_plicsw_node(void *fdt, int nodeoffset, unsigned long *plicsw_base,
 	return 0;
 }
 
-int fdt_parse_compat_addr(void *fdt, uint64_t *addr,
+int fdt_parse_compat_addr_size(void *fdt, uint64_t *addr, uint64_t *size,
 			  const char *compatible)
 {
 	int nodeoffset, rc;
@@ -1156,7 +1156,7 @@ int fdt_parse_compat_addr(void *fdt, uint64_t *addr,
 	if (nodeoffset < 0)
 		return nodeoffset;
 
-	rc = fdt_get_node_addr_size(fdt, nodeoffset, 0, addr, NULL);
+	rc = fdt_get_node_addr_size(fdt, nodeoffset, 0, addr, size);
 	if (rc < 0 || !addr)
 		return SBI_ENODEV;
 

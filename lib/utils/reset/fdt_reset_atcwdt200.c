@@ -96,7 +96,7 @@ static int atcwdt200_reset_init(void *fdt, int nodeoff,
 	 * The reset device requires smu to program the reset
 	 * vector for each hart.
 	 */
-	if (fdt_parse_compat_addr(fdt, &reg_addr, "andestech,atcsmu"))
+	if (fdt_parse_compat_addr_size(fdt, &reg_addr, NULL, "andestech,atcsmu"))
 		return SBI_ENODEV;
 
 	smu.addr = (unsigned long)reg_addr;
