@@ -14,6 +14,7 @@
 #include <sbi/sbi_ecall_interface.h>
 #include <sbi/sbi_trap.h>
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/sbi_hart.h>
 
 static int sbi_ecall_dbcn_handler(unsigned long extid, unsigned long funcid,
@@ -48,9 +49,19 @@ static int sbi_ecall_dbcn_handler(unsigned long extid, unsigned long funcid,
 			return SBI_ERR_INVALID_PARAM;
 		sbi_hart_map_saddr(regs->a1, regs->a0);
 		if (funcid == SBI_EXT_DBCN_CONSOLE_WRITE)
+#if defined(__CHERI_PURE_CAPABILITY__)
+			out->value = sbi_nputs((const char *)cheri_build_cap_r(regs->a1, regs->a0),
+					       regs->a0);
+#else
 			out->value = sbi_nputs((const char *)regs->a1, regs->a0);
+#endif
 		else
+#if defined(__CHERI_PURE_CAPABILITY__)
+			out->value = sbi_nputs((const char *)cheri_build_cap_rw(regs->a1, regs->a0),
+			                       regs->a0);
+#else
 			out->value = sbi_ngets((char *)regs->a1, regs->a0);
+#endif
 		sbi_hart_unmap_saddr();
 		return 0;
 	case SBI_EXT_DBCN_CONSOLE_WRITE_BYTE:
