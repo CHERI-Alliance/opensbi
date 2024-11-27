@@ -8,6 +8,7 @@
 
 #include <libfdt.h>
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_io.h>
 #include <sbi/sbi_console.h>
 #include <sbi/sbi_hartmask.h>
 #include <sbi/sbi_platform.h>
@@ -499,7 +500,7 @@ static int fdt_parse_uart_node_common(void *fdt, int nodeoffset,
 				    &reg_addr, &reg_size);
 	if (rc < 0 || !reg_addr || !reg_size)
 		return SBI_ENODEV;
-	uart->addr = reg_addr;
+	uart->addr = ioremap(reg_addr, reg_size);
 
 	/**
 	 * UART address is mandatory. clock-frequency and current-speed

@@ -11,6 +11,7 @@
 #include <sbi_utils/fdt/fdt_helper.h>
 #include <sbi_utils/serial/fdt_serial.h>
 #include <sbi_utils/serial/litex-uart.h>
+#include <sbi/riscv_io.h>
 
 static int serial_litex_init(void *fdt, int nodeoff,
 			     const struct fdt_match *match)
@@ -25,7 +26,7 @@ static int serial_litex_init(void *fdt, int nodeoff,
 	if (rc < 0 || !reg_addr || !reg_size)
 		return SBI_ENODEV;
 
-	return litex_uart_init(reg_addr);
+	return litex_uart_init(ioremap(reg_addr, reg_size));
 }
 
 static const struct fdt_match serial_litex_match[] = {

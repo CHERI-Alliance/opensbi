@@ -26,7 +26,7 @@ struct fdt_phandle_args {
 };
 
 struct platform_uart_data {
-	unsigned long addr;
+	void *addr;
 	unsigned long freq;
 	unsigned long baud;
 	unsigned long reg_shift;

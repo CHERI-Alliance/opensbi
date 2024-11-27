@@ -6,6 +6,6 @@
 #ifndef __SERIAL_RENESAS_SCIF_H__
 #define __SERIAL_RENESAS_SCIF_H__
 
-int renesas_scif_init(unsigned long base, u32 in_freq, u32 baudrate);
+int renesas_scif_init(void *base, u32 in_freq, u32 baudrate);
 
 #endif /* __SERIAL_RENESAS_SCIF_H__ */

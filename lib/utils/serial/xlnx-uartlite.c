@@ -57,7 +57,7 @@ static struct sbi_console_device xlnx_uartlite_console = {
 	.console_getc = xlnx_uartlite_getc
 };
 
-int xlnx_uartlite_init(unsigned long base)
+int xlnx_uartlite_init(void *base)
 {
 	xlnx_uartlite_base = (volatile char *)base;
 

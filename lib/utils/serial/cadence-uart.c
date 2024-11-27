@@ -92,7 +92,7 @@ static struct sbi_console_device cadence_console = {
 	.console_getc = cadence_uart_getc
 };
 
-int cadence_uart_init(unsigned long base, u32 in_freq, u32 baudrate)
+int cadence_uart_init(void *base, u32 in_freq, u32 baudrate)
 {
 	uart_base     = (volatile void *)base;
 	uart_in_freq  = in_freq;
@@ -126,7 +126,8 @@ int cadence_uart_init(unsigned long base, u32 in_freq, u32 baudrate)
 
 	sbi_console_set_device(&cadence_console);
 
-	return sbi_domain_root_add_memrange(base, PAGE_SIZE, PAGE_SIZE,
+	return sbi_domain_root_add_memrange((unsigned long)base,
+						PAGE_SIZE, PAGE_SIZE,
 					    (SBI_DOMAIN_MEMREGION_MMIO |
 					    SBI_DOMAIN_MEMREGION_SHARED_SURW_MRW));
 }

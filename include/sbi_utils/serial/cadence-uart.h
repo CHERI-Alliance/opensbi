@@ -11,6 +11,6 @@
 
 #include <sbi/sbi_types.h>
 
-int cadence_uart_init(unsigned long base, u32 in_freq, u32 baudrate);
+int cadence_uart_init(void *base, u32 in_freq, u32 baudrate);
 
 #endif
