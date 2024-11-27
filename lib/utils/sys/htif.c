@@ -5,6 +5,7 @@
  * (Regents).  All Rights Reserved.
  */
 
+#include <sbi/riscv_io.h>
 #include <sbi/riscv_locks.h>
 #include <sbi/sbi_console.h>
 #include <sbi/sbi_error.h>
@@ -119,8 +120,8 @@ static int set_custom_addr(bool custom_addr,
 		    ((custom_fromhost_addr != (unsigned long)htif_fromhost) ||
 		     (custom_tohost_addr != (unsigned long)htif_tohost)))
 			return SBI_EINVAL;
-		htif_fromhost = (uint64_t *)custom_fromhost_addr;
-		htif_tohost = (uint64_t *)custom_tohost_addr;
+		htif_fromhost = (uint64_t *)ioremap(custom_fromhost_addr, sizeof(uint64_t));
+		htif_tohost = (uint64_t *)ioremap(custom_tohost_addr, sizeof(uint64_t));
 		htif_custom = true;
 	}
 
