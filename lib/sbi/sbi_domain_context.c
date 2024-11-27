@@ -53,9 +53,9 @@ static void switch_to_next_domain_context(struct sbi_context *ctx,
 	/* Save current CSR context and restore target domain's CSR context */
 	ctx->sstatus	= csr_swap(CSR_SSTATUS, dom_ctx->sstatus);
 	ctx->sie	= csr_swap(CSR_SIE, dom_ctx->sie);
-	ctx->stvec	= csr_swap(CSR_STVEC, dom_ctx->stvec);
-	ctx->sscratch	= csr_swap(CSR_SSCRATCH, dom_ctx->sscratch);
-	ctx->sepc	= csr_swap(CSR_SEPC, dom_ctx->sepc);
+	ctx->stvec	= ptr_csr_swap(CSR_STVEC, dom_ctx->stvec);
+	ctx->sscratch	= ptr_csr_swap(CSR_SSCRATCH, dom_ctx->sscratch);
+	ctx->sepc	= ptr_csr_swap(CSR_SEPC, dom_ctx->sepc);
 	ctx->scause	= csr_swap(CSR_SCAUSE, dom_ctx->scause);
 	ctx->stval	= csr_swap(CSR_STVAL, dom_ctx->stval);
 	ctx->sip	= csr_swap(CSR_SIP, dom_ctx->sip);

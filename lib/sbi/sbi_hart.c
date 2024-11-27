@@ -1055,17 +1055,17 @@ sbi_hart_switch_mode(unsigned long arg0, unsigned long arg1,
 		val = INSERT_FIELD(val, MSTATUS_MPV, next_virt);
 #endif
 	csr_write(CSR_MSTATUS, val);
-	csr_write(CSR_MEPC, next_addr);
+	ptr_csr_write(CSR_MEPC, next_addr);
 
 	if (next_mode == PRV_S) {
 		if (next_virt) {
-			csr_write(CSR_VSTVEC, next_addr);
-			csr_write(CSR_VSSCRATCH, 0);
+			ptr_csr_write(CSR_VSTVEC, next_addr);
+			ptr_csr_write(CSR_VSSCRATCH, 0);
 			csr_write(CSR_VSIE, 0);
 			csr_write(CSR_VSATP, 0);
 		} else {
-			csr_write(CSR_STVEC, next_addr);
-			csr_write(CSR_SSCRATCH, 0);
+			ptr_csr_write(CSR_STVEC, next_addr);
+			ptr_csr_write(CSR_SSCRATCH, 0);
 			csr_write(CSR_SIE, 0);
 			csr_write(CSR_SATP, 0);
 		}

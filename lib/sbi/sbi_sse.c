@@ -471,7 +471,7 @@ static void sse_event_inject(struct sbi_sse_event *e,
 	i_ctx->a6 = regs->a6;
 	i_ctx->a7 = regs->a7;
 	i_ctx->flags = sse_interrupted_flags(regs->mstatus);
-	i_ctx->sepc = csr_read(CSR_SEPC);
+	i_ctx->sepc = ptr_csr_read(CSR_SEPC);
 
 	regs->mstatus &= ~(MSTATUS_SPP | SSTATUS_SPIE);
 	if (regs->mstatus & MSTATUS_MPP)
@@ -497,7 +497,7 @@ static void sse_event_inject(struct sbi_sse_event *e,
 
 		csr_write(CSR_HSTATUS, hstatus);
 	}
-	csr_write(CSR_SEPC, regs->mepc);
+	ptr_csr_write(CSR_SEPC, regs->mepc);
 
 	/* Setup entry context */
 	regs->a6 = e->attrs.entry.arg;
@@ -523,7 +523,7 @@ static void sse_event_resume(struct sbi_sse_event *e,
 {
 	struct sse_interrupted_state *i_ctx = &e->attrs.interrupted;
 
-	regs->mepc = csr_read(CSR_SEPC);
+	regs->mepc = ptr_csr_read(CSR_SEPC);
 
 	regs->mstatus &= ~MSTATUS_MPP;
 	if (regs->mstatus & MSTATUS_SPP)
@@ -566,7 +566,7 @@ static void sse_event_resume(struct sbi_sse_event *e,
 
 	regs->a7 = i_ctx->a7;
 	regs->a6 = i_ctx->a6;
-	csr_write(CSR_SEPC, i_ctx->sepc);
+	ptr_csr_write(CSR_SEPC, i_ctx->sepc);
 }
 
 static bool sse_event_is_ready(struct sbi_sse_event *e)

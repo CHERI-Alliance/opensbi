@@ -245,6 +245,42 @@
 				     : "memory");                  \
 	})
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define ptr_csr_swap(csr, val)                                          \
+	({                                                              \
+		__uintcap_t __v = val;                                  \
+		__asm__ __volatile__("csrrw %0, " __ASM_STR(csr) ", %1" \
+				     : "=C"(__v)                        \
+				     : "CK"(__v)                        \
+				     : "memory");                       \
+		__v;                                                    \
+	})
+
+#define ptr_csr_write(csr, val)                                         \
+	({                                                              \
+		__uintcap_t __v = val;                                  \
+		__asm__ __volatile__("csrw " __ASM_STR(csr) ", %0"      \
+				     : "+C"(__v)                        \
+				     :                                  \
+				     : "memory");                       \
+		__v;                                                    \
+	})
+
+#define ptr_csr_read(csr)                                       \
+	({                                                      \
+		__uintcap_t __v;                                \
+		__asm__ __volatile__("csrr %0, " __ASM_STR(csr) \
+				     : "=C"(__v)                \
+				     :                          \
+				     : "memory");               \
+		__v;                                            \
+	})
+#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+#define ptr_csr_swap(csr, val)    csr_swap(csr, val)
+#define ptr_csr_write(csr, val)   csr_write(csr, val)
+#define ptr_csr_read(csr)         csr_read(csr)
+#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+
 #define csr_read_set(csr, val)                                          \
 	({                                                              \
 		unsigned long __v = (unsigned long)(val);               \
