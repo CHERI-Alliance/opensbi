@@ -52,6 +52,12 @@
 		PROVIDE(__rela_dyn_end = .);
 	}
 
+	__cap_relocs : {
+		PROVIDE(__cap_relocs_start = .);
+		*(__cap_relocs)
+		PROVIDE(__cap_relocs_end = .);
+	}
+
 	PROVIDE(_rodata_end = .);
 
 	/* End of the read-only data sections */
@@ -61,7 +67,8 @@
 	 * regions, so ensure that the split is power-of-2.
 	 */
 	. = ALIGN(1 << LOG2CEIL((SIZEOF(.rodata) + SIZEOF(.text)
-				+ SIZEOF(.dynsym) + SIZEOF(.rela.dyn))));
+				+ SIZEOF(.dynsym) + SIZEOF(.rela.dyn)
+				+ SIZEOF(__cap_relocs))));
 
 	PROVIDE(_fw_rw_start = .);
 
@@ -77,6 +84,8 @@
 		*(.data.*)
 		*(.readmostly.data)
 		*(*.data)
+		. = ALIGN(16);
+		*(.captable)
 		. = ALIGN(8);
 
 		PROVIDE(_data_end = .);
@@ -92,6 +101,7 @@
 		*(.bss)
 		*(.bss.*)
 		. = ALIGN(8);
+
 		PROVIDE(_bss_end = .);
 	}
 
