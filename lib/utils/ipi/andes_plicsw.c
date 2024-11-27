@@ -20,7 +20,7 @@ struct plicsw_data plicsw;
 
 static void plicsw_ipi_send(u32 hart_index)
 {
-	ulong pending_reg;
+	void *pending_reg;
 	u32 interrupt_id, word_index, pending_bit;
 	u32 target_hart = sbi_hartindex_to_hartid(hart_index);
 
@@ -44,7 +44,7 @@ static void plicsw_ipi_send(u32 hart_index)
 static void plicsw_ipi_clear(u32 hart_index)
 {
 	u32 target_hart = sbi_hartindex_to_hartid(hart_index);
-	ulong reg = plicsw.addr + PLICSW_CONTEXT_BASE + PLICSW_CONTEXT_CLAIM +
+	void *reg = plicsw.addr + PLICSW_CONTEXT_BASE + PLICSW_CONTEXT_CLAIM +
 		    PLICSW_CONTEXT_STRIDE * target_hart;
 
 	if (plicsw.hart_count <= target_hart)
@@ -79,7 +79,7 @@ int plicsw_cold_ipi_init(struct plicsw_data *plicsw)
 {
 	int rc;
 	u32 interrupt_id, word_index, enable_bit;
-	ulong enable_reg, priority_reg;
+	void *enable_reg, *priority_reg;
 
 	/* Setup source priority */
 	for (int i = 0; i < plicsw->hart_count; i++) {
@@ -101,7 +101,8 @@ int plicsw_cold_ipi_init(struct plicsw_data *plicsw)
 	}
 
 	/* Add PLICSW region to the root domain */
-	rc = sbi_domain_root_add_memrange(plicsw->addr, plicsw->size,
+	rc = sbi_domain_root_add_memrange((unsigned long)plicsw->addr,
+					  plicsw->size,
 					  PLICSW_REGION_ALIGN,
 					  SBI_DOMAIN_MEMREGION_MMIO |
 					  SBI_DOMAIN_MEMREGION_M_READABLE |

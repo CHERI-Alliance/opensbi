@@ -12,6 +12,7 @@
 #include <sbi_utils/fdt/fdt_helper.h>
 #include <sbi_utils/ipi/fdt_ipi.h>
 #include <sbi_utils/ipi/aclint_mswi.h>
+#include <sbi/riscv_io.h>
 
 static int ipi_mswi_cold_init(void *fdt, int nodeoff,
 			      const struct fdt_match *match)
@@ -19,13 +20,14 @@ static int ipi_mswi_cold_init(void *fdt, int nodeoff,
 	int rc;
 	unsigned long offset;
 	struct aclint_mswi_data *ms;
+	uint64_t addr;
 
 	ms = sbi_zalloc(sizeof(*ms));
 	if (!ms)
 		return SBI_ENOMEM;
 
 	rc = fdt_parse_aclint_node(fdt, nodeoff, false, false,
-				   &ms->addr, &ms->size, NULL, NULL,
+				   &addr, &ms->size, NULL, NULL,
 				   &ms->first_hartid, &ms->hart_count);
 	if (rc) {
 		sbi_free(ms);
@@ -35,11 +37,13 @@ static int ipi_mswi_cold_init(void *fdt, int nodeoff,
 	if (match->data) {
 		/* Adjust MSWI address and size for CLINT device */
 		offset = *((unsigned long *)match->data);
-		ms->addr += offset;
+		addr += offset;
 		if ((ms->size - offset) < ACLINT_MSWI_SIZE)
 			return SBI_EINVAL;
 		ms->size = ACLINT_MSWI_SIZE;
 	}
+
+	ms->addr = ioremap(addr, ms->size);
 
 	rc = aclint_mswi_cold_init(ms);
 	if (rc) {

@@ -27,7 +27,7 @@
 #define PLICSW_REGION_ALIGN	0x1000
 
 struct plicsw_data {
-	unsigned long addr;
+	void *addr;
 	unsigned long size;
 	uint32_t hart_count;
 };

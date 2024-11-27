@@ -88,7 +88,7 @@ int aclint_mswi_cold_init(struct aclint_mswi_data *mswi)
 	struct sbi_domain_memregion reg;
 
 	/* Sanity checks */
-	if (!mswi || (mswi->addr & (ACLINT_MSWI_ALIGN - 1)) ||
+	if (!mswi || ((unsigned long)mswi->addr & (ACLINT_MSWI_ALIGN - 1)) ||
 	    (mswi->size < (mswi->hart_count * sizeof(u32))) ||
 	    (!mswi->hart_count || mswi->hart_count > ACLINT_MSWI_MAX_HARTS))
 		return SBI_EINVAL;
@@ -117,7 +117,7 @@ int aclint_mswi_cold_init(struct aclint_mswi_data *mswi)
 	for (pos = 0; pos < mswi->size; pos += ACLINT_MSWI_ALIGN) {
 		region_size = ((mswi->size - pos) < ACLINT_MSWI_ALIGN) ?
 			      (mswi->size - pos) : ACLINT_MSWI_ALIGN;
-		sbi_domain_memregion_init(mswi->addr + pos, region_size,
+		sbi_domain_memregion_init((unsigned long)mswi->addr + pos, region_size,
 					  (SBI_DOMAIN_MEMREGION_MMIO |
 					   SBI_DOMAIN_MEMREGION_M_READABLE |
 					   SBI_DOMAIN_MEMREGION_M_WRITABLE),

@@ -21,11 +21,14 @@ int fdt_plicsw_cold_ipi_init(void *fdt, int nodeoff,
 				const struct fdt_match *match)
 {
 	int rc;
+	uint64_t addr;
 
-	rc = fdt_parse_plicsw_node(fdt, nodeoff, &plicsw.addr, &plicsw.size,
+	rc = fdt_parse_plicsw_node(fdt, nodeoff, &addr, &plicsw.size,
 				   &plicsw.hart_count);
 	if (rc)
 		return rc;
+
+	plicsw.addr = ioremap(addr, plicsw.size);
 
 	rc = plicsw_cold_ipi_init(&plicsw);
 	if (rc)
