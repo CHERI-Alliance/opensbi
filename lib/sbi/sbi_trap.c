@@ -165,11 +165,11 @@ int sbi_trap_redirect(struct sbi_trap_regs *regs,
 	if (next_virt) {
 		/* Update VS-mode exception info */
 		csr_write(CSR_VSTVAL, trap->tval);
-		csr_write(CSR_VSEPC, regs->mepc);
+		ptr_csr_write(CSR_VSEPC, regs->mepc);
 		csr_write(CSR_VSCAUSE, trap->cause);
 
 		/* Set MEPC to VS-mode exception vector base */
-		regs->mepc = csr_read(CSR_VSTVEC) & ~MTVEC_MODE;
+		regs->mepc = ptr_csr_read(CSR_VSTVEC) & ~MTVEC_MODE;
 
 		/* Set MPP to VS-mode */
 		regs->mstatus &= ~MSTATUS_MPP;
@@ -200,11 +200,11 @@ int sbi_trap_redirect(struct sbi_trap_regs *regs,
 	} else {
 		/* Update S-mode exception info */
 		csr_write(CSR_STVAL, trap->tval);
-		csr_write(CSR_SEPC, regs->mepc);
+		ptr_csr_write(CSR_SEPC, regs->mepc);
 		csr_write(CSR_SCAUSE, trap->cause);
 
 		/* Set MEPC to S-mode exception vector base */
-		regs->mepc = csr_read(CSR_STVEC) & ~MTVEC_MODE;
+		regs->mepc = ptr_csr_read(CSR_STVEC) & ~MTVEC_MODE;
 
 		/* Set MPP to S-mode */
 		regs->mstatus &= ~MSTATUS_MPP;
