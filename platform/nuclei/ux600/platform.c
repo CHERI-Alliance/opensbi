@@ -249,5 +249,5 @@ const struct sbi_platform platform = {
 	.hart_stack_size	= SBI_PLATFORM_DEFAULT_HART_STACK_SIZE,
 	.heap_size		=
 			SBI_PLATFORM_DEFAULT_HEAP_SIZE(UX600_HART_COUNT),
-	.platform_ops_addr	= (unsigned long)&platform_ops
+	.platform_ops_addr	= (uintptr_t)&platform_ops
 };

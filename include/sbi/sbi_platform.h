@@ -184,9 +184,9 @@ struct sbi_platform {
 	/** Reserved for future use */
 	u32 reserved;
 	/** Pointer to sbi platform operations */
-	unsigned long platform_ops_addr;
+	uintptr_t platform_ops_addr;
 	/** Pointer to system firmware specific context */
-	unsigned long firmware_context;
+	uintptr_t firmware_context;
 	/**
 	 * HART index to HART id table
 	 *

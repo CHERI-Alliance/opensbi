@@ -189,5 +189,5 @@ const struct sbi_platform platform = {
 	.hart_count = ARIANE_HART_COUNT,
 	.hart_stack_size = SBI_PLATFORM_DEFAULT_HART_STACK_SIZE,
 	.heap_size = SBI_PLATFORM_DEFAULT_HEAP_SIZE(ARIANE_HART_COUNT),
-	.platform_ops_addr = (unsigned long)&platform_ops
+	.platform_ops_addr = (uintptr_t)&platform_ops
 };

@@ -421,5 +421,5 @@ struct sbi_platform platform = {
 	.hart_index2id		= generic_hart_index2id,
 	.hart_stack_size	= SBI_PLATFORM_DEFAULT_HART_STACK_SIZE,
 	.heap_size		= SBI_PLATFORM_DEFAULT_HEAP_SIZE(0),
-	.platform_ops_addr	= (unsigned long)&platform_ops
+	.platform_ops_addr	= (uintptr_t)&platform_ops
 };
