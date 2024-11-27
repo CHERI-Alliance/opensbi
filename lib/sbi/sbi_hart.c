@@ -685,6 +685,13 @@ const struct sbi_hart_ext_data sbi_hart_ext[] = {
 _Static_assert(SBI_HART_EXT_MAX == array_size(sbi_hart_ext),
 	       "sbi_hart_ext[]: wrong number of entries");
 
+#if defined(__riscv_zcheripurecap)
+const char sbi_hart_zcheripurecap_ext[] = "zcheripurecap";
+#if defined(__riscv_zcherihybrid)
+const char sbi_hart_zcherihybrid_ext[] = "zcherihybrid";
+#endif /* !defined(__riscv_zcherihybrid) */
+#endif /* !defined(__riscv_zcheripurecap) */
+
 /**
  * Get the hart extensions in string format
  *
@@ -711,6 +718,19 @@ void sbi_hart_get_extensions_str(struct sbi_scratch *scratch,
 				 "%s,", sbi_hart_ext[ext].name);
 		offset = offset + sbi_strlen(sbi_hart_ext[ext].name) + 1;
 	}
+
+#if defined(__riscv_zcheripurecap)
+	sbi_snprintf(extensions_str + offset,
+			 nestr - offset,
+			 "%s,", sbi_hart_zcheripurecap_ext);
+	offset = offset + sbi_strlen(sbi_hart_zcheripurecap_ext) + 1;
+#if defined(__riscv_zcherihybrid)
+	sbi_snprintf(extensions_str + offset,
+			 nestr - offset,
+			 "%s,", sbi_hart_zcherihybrid_ext);
+	offset = offset + sbi_strlen(sbi_hart_zcherihybrid_ext) + 1;
+#endif /* !defined(__riscv_zcherihybrid) */
+#endif /* !defined(__riscv_zcheripurecap) */
 
 	if (offset)
 		extensions_str[offset - 1] = '\0';
