@@ -306,7 +306,7 @@ fail_exit:
 
 int sbi_hsm_hart_start(struct sbi_scratch *scratch,
 		       const struct sbi_domain *dom,
-		       u32 hartid, ulong saddr, ulong smode, ulong arg1)
+		       u32 hartid, uintptr_t saddr, ulong smode, uintptr_t arg1)
 {
 	u32 hartindex = sbi_hartid_to_hartindex(hartid);
 	unsigned long init_count, entry_count;
