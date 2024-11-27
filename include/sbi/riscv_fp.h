@@ -25,21 +25,23 @@
 	({                                                                                              \
 		register s32 value asm("a0") =                                                          \
 			SHIFT_RIGHT(insn, (pos)-3) & 0xf8;                                              \
-		ulong tmp;                                                                              \
-		asm("1: auipc %0, %%pcrel_hi(get_f32_reg); add %0, %0, %1; jalr t0, %0, %%pcrel_lo(1b)" \
-		    : "=&r"(tmp), "+&r"(value)::"t0");                                                  \
+		uintptr_t tmp;                                                                          \
+		asm("1: auipc %0, %%pcrel_hi(get_f32_reg); add %0, %0, %1;\n"                           \
+		    "   jalr "PREG(t0)", %0, %%pcrel_lo(1b)"                                            \
+		    : "=&"PTR_REG(tmp), "+&r"(value)::PREG(t0));                                        \
 		value;                                                                                  \
 	})
 #define SET_F32_REG(insn, pos, regs, val)                                                                   \
 	({                                                                                                  \
 		register u32 value asm("a0") = (val);                                                       \
 		ulong offset = SHIFT_RIGHT(insn, (pos)-3) & 0xf8;                                           \
-		ulong tmp;                                                                                  \
+		uintptr_t tmp;                                                                              \
 		asm volatile(                                                                               \
-			"1: auipc %0, %%pcrel_hi(put_f32_reg); add %0, %0, %2; jalr t0, %0, %%pcrel_lo(1b)" \
-			: "=&r"(tmp)                                                                        \
+			"1: auipc %0, %%pcrel_hi(put_f32_reg); add %0, %0, %2;\n"                           \
+			"   jalr "PREG(t0)", %0, %%pcrel_lo(1b)"                                            \
+			: "=&"PTR_REG(tmp)                                                                  \
 			: "r"(value), "r"(offset)                                                           \
-			: "t0");                                                                            \
+			: PREG(t0));                                                                        \
 	})
 #define init_fp_reg(i) SET_F32_REG((i) << 3, 3, 0, 0)
 
@@ -47,9 +49,10 @@
 #define GET_F64_REG(insn, pos, regs)                                                                    \
 	({                                                                                              \
 		register ulong value asm("a0") = SHIFT_RIGHT(insn, (pos)-3) & 0xf8;                     \
-		ulong tmp;                                                                              \
-		asm("1: auipc %0, %%pcrel_hi(get_f64_reg); add %0, %0, %1; jalr t0, %0, %%pcrel_lo(1b)" \
-		    : "=&r"(tmp), "+&r"(value)::"t0");                                                  \
+		uintptr_t tmp;                                                                          \
+		asm("1: auipc %0, %%pcrel_hi(get_f64_reg); add %0, %0, %1;\n"                           \
+		    "   jalr "PREG(t0)", %0, %%pcrel_lo(1b)"                                            \
+		    : "=&"PTR_REG(tmp), "+&r"(value)::PREG(t0));                                        \
 		value;                                                                                  \
 	})
 #else
@@ -58,8 +61,9 @@
 		u64 value;                                                                               \
 		ulong offset = SHIFT_RIGHT(insn, (pos)-3) & 0xf8;                                        \
 		register ulong ptr asm("a0") = (ulong)&value;                                            \
-		asm ("1: auipc t1, %%pcrel_hi(get_f64_reg); add t1, t1, %2; jalr t0, t1, %%pcrel_lo(1b)" \
-		    : "=m"(value) : "r"(ptr), "r"(offset) : "t0", "t1");                                 \
+		asm ("1: auipc "PREG(t0)", %%pcrel_hi(get_f64_reg); add "PREG(t1)", "PREG(t1)", %2;\n"   \
+		     "   jalr "PREG(t0)", "PREG(t1)", %%pcrel_lo(1b)"                                    \
+		    : "=m"(value) : "r"(ptr), "r"(offset) : PREG(t0), PREG(t1));                         \
 		value;                                                                                   \
 	})
 #endif
@@ -70,12 +74,13 @@
 		register ulong value asm("a0") =                                                            \
 			sizeof(ulong) == 4 ? (ulong)&__val : (ulong)__val;                                  \
 		ulong offset = SHIFT_RIGHT(insn, (pos)-3) & 0xf8;                                           \
-		ulong tmp;                                                                                  \
+		uintptr_t tmp;                                                                              \
 		asm volatile(                                                                               \
-			"1: auipc %0, %%pcrel_hi(put_f64_reg); add %0, %0, %2; jalr t0, %0, %%pcrel_lo(1b)" \
-			: "=&r"(tmp)                                                                        \
+			"1: auipc %0, %%pcrel_hi(put_f64_reg); add %0, %0, %2;\n"                           \
+			"   jalr "PREG(t0)", %0, %%pcrel_lo(1b)"                                            \
+			: "=&"PTR_REG(tmp)                                                                  \
 			: "r"(value), "r"(offset)                                                           \
-			: "t0");                                                                            \
+			: PREG(t0));                                                                        \
 	})
 #define GET_FCSR() csr_read(CSR_FCSR)
 #define SET_FCSR(value) csr_write(CSR_FCSR, (value))
