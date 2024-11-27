@@ -8,6 +8,7 @@
  */
 
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/riscv_encoding.h>
 #include <sbi/riscv_fp.h>
 #include <sbi/sbi_error.h>
@@ -268,10 +269,15 @@ static int sbi_misaligned_ld_emulator(int rlen, union sbi_ldst_data *out_val,
 	struct sbi_trap_regs *regs = &tcntx->regs;
 	struct sbi_trap_info uptrap;
 	int i;
+#if defined(__CHERI_PURE_CAPABILITY__)
+	u8 *ld_ptr = (u8*)cheri_build_cap_r(orig_trap->tval, rlen);
+#else
+	u8 *ld_ptr = (u8*)orig_trap->tval;
+#endif
 
 	for (i = 0; i < rlen; i++) {
 		out_val->data_bytes[i] =
-			sbi_load_u8((void *)(orig_trap->tval + i), &uptrap);
+			sbi_load_u8(ld_ptr + i, &uptrap);
 		if (uptrap.cause) {
 			uptrap.tinst = sbi_misaligned_tinst_fixup(
 				orig_trap->tinst, uptrap.tinst, i);
@@ -293,10 +299,14 @@ static int sbi_misaligned_st_emulator(int wlen, union sbi_ldst_data in_val,
 	struct sbi_trap_regs *regs = &tcntx->regs;
 	struct sbi_trap_info uptrap;
 	int i;
+#if defined(__CHERI_PURE_CAPABILITY__)
+	u8 *st_ptr = (u8*)cheri_build_cap_rw(orig_trap->tval, wlen);
+#else
+	u8 *st_ptr = (u8*)orig_trap->tval;
+#endif
 
 	for (i = 0; i < wlen; i++) {
-		sbi_store_u8((void *)(orig_trap->tval + i),
-			     in_val.data_bytes[i], &uptrap);
+		sbi_store_u8(st_ptr + i, in_val.data_bytes[i], &uptrap);
 		if (uptrap.cause) {
 			uptrap.tinst = sbi_misaligned_tinst_fixup(
 				orig_trap->tinst, uptrap.tinst, i);
