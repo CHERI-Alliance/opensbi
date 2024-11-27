@@ -8,6 +8,8 @@
  *   Kautuk Consul <kconsul@ventanamicro.com>
  */
 
+#include <sbi/riscv_asm.h>
+#include <sbi/riscv_encoding.h>
 #include <sbi/sbi_console.h>
 #include <sbi/sbi_string.h>
 #include <sbi/sbi_error.h>
@@ -23,7 +25,7 @@
 static long semihosting_trap(int sysnum, void *addr)
 {
 	register int ret asm ("a0") = sysnum;
-	register void *param0 asm ("a1") = addr;
+	register void *param0 asm (RREG(a1)) = addr;
 
 	asm volatile (
 		"	.align 4\n"
@@ -35,7 +37,7 @@ static long semihosting_trap(int sysnum, void *addr)
 		"	srai zero, zero, 7\n"
 
 		"	.option pop\n"
-		: "+r" (ret) : "r" (param0) : "memory");
+		: "+r" (ret) : PTR_REG(param0) : "memory");
 
 	return ret;
 }
@@ -46,8 +48,8 @@ static bool try_semihosting = true;
 bool semihosting_enabled(void)
 {
 	register int ret asm ("a0") = SYSERRNO;
-	register void *param0 asm ("a1") = NULL;
-	unsigned long tmp = 0;
+	register void *param0 asm (RREG(a1)) = NULL;
+	uintptr_t tmp = 0, tmp2 = 0;
 
 	if (!try_semihosting)
 		return _semihosting_enabled;
@@ -60,23 +62,24 @@ bool semihosting_enabled(void)
 		"	j _semihost_test_vector_next\n"
 		"	.align 4\n"
 		"_semihost_test_vector:\n"
-		"	csrr %[en], mepc\n"
-		"	addi %[en], %[en], 4\n"
-		"	csrw mepc, %[en]\n"
+		"	csrr %[tmp], " STR(CSR_MEPC) "\n"
+		"	add %[tmp], %[tmp], 4\n"
+		"	csrw  " STR(CSR_MEPC) ", %[tmp]\n"
 		"	add %[en], zero, zero\n"
 		"	mret\n"
 		"_semihost_test_vector_next:\n"
 
-		"	la %[tmp], _semihost_test_vector\n"
-		"	csrrw %[tmp], mtvec, %[tmp]\n"
+		"	" PTR_L " %[tmp2], _semihost_test_vector\n"
+		"	csrrw %[tmp], " STR(CSR_MTVEC) ", %[tmp]\n"
 		"	.align 4\n"
 		"	slli zero, zero, 0x1f\n"
 		"	ebreak\n"
 		"	srai zero, zero, 7\n"
-		"	csrw mtvec, %[tmp]\n"
+		"	csrw " STR(CSR_MTVEC) ", %[tmp2]\n"
 
 		"	.option pop\n"
-		: [tmp] "+r" (tmp), [en] "+r" (_semihosting_enabled),
+		: [tmp] "+"PTR_REG(tmp), [tmp2] "+"PTR_REG(tmp2),
+		  [en] "+r" (_semihosting_enabled),
 		  [ret] "+r" (ret)
 		: "r" (param0) : "memory");
 
