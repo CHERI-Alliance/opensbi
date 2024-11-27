@@ -21,20 +21,20 @@
 #define STARFIVE_GPIO_SHIFT_BITS	0x3
 
 struct starfive_gpio_chip {
-	unsigned long addr;
+	void *addr;
 	struct gpio_chip chip;
 };
 
 static int starfive_gpio_direction_output(struct gpio_pin *gp, int value)
 {
 	u32 val;
-	unsigned long reg_addr;
+	uintptr_t reg_addr;
 	u32 bit_mask, shift_bits;
 	struct starfive_gpio_chip *chip =
 		container_of(gp->chip, struct starfive_gpio_chip, chip);
 
 	/* set out en*/
-	reg_addr = chip->addr + gp->offset;
+	reg_addr = (uintptr_t)chip->addr + gp->offset;
 	reg_addr &= ~(STARFIVE_GPIO_REG_SHIFT_MASK);
 
 	shift_bits = (gp->offset & STARFIVE_GPIO_REG_SHIFT_MASK)
@@ -51,12 +51,12 @@ static int starfive_gpio_direction_output(struct gpio_pin *gp, int value)
 static void starfive_gpio_set(struct gpio_pin *gp, int value)
 {
 	u32 val;
-	unsigned long reg_addr;
+	uintptr_t reg_addr;
 	u32 bit_mask, shift_bits;
 	struct starfive_gpio_chip *chip =
 		container_of(gp->chip, struct starfive_gpio_chip, chip);
 
-	reg_addr = chip->addr + gp->offset;
+	reg_addr = (uintptr_t)chip->addr + gp->offset;
 	reg_addr &= ~(STARFIVE_GPIO_REG_SHIFT_MASK);
 
 	shift_bits = (gp->offset & STARFIVE_GPIO_REG_SHIFT_MASK)
@@ -76,19 +76,19 @@ static int starfive_gpio_init(void *fdt, int nodeoff, u32 phandle,
 {
 	int rc;
 	struct starfive_gpio_chip *chip;
-	u64 addr;
+	u64 addr, size;
 
 	chip = sbi_zalloc(sizeof(*chip));
 	if (!chip)
 		return SBI_ENOMEM;
 
-	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, NULL);
+	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, &size);
 	if (rc) {
 		sbi_free(chip);
 		return rc;
 	}
 
-	chip->addr = addr;
+	chip->addr = ioremap(addr, size);
 	chip->chip.driver = &fdt_gpio_starfive;
 	chip->chip.id = phandle;
 	chip->chip.ngpio = STARFIVE_GPIO_PINS_DEF;

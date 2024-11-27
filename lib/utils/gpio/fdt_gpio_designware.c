@@ -83,8 +83,9 @@ static int dw_gpio_init_bank(void *fdt, int nodeoff, u32 phandle,
 {
 	struct dw_gpio_chip *chip;
 	const fdt32_t *val;
-	uint64_t addr;
+	uint64_t addr, size;
 	int rc, poff, nr_pins, bank, len;
+	void* vaddr = NULL;
 
 	if (dw_gpio_chip_count >= DW_GPIO_CHIP_MAX)
 		return SBI_ENOSPC;
@@ -94,7 +95,7 @@ static int dw_gpio_init_bank(void *fdt, int nodeoff, u32 phandle,
 	if (poff < 0)
 		return SBI_EINVAL;
 
-	rc = fdt_get_node_addr_size(fdt, poff, 0, &addr, NULL);
+	rc = fdt_get_node_addr_size(fdt, poff, 0, &addr, &size);
 	if (rc)
 		return rc;
 
@@ -112,8 +113,10 @@ static int dw_gpio_init_bank(void *fdt, int nodeoff, u32 phandle,
 
 	chip = &dw_gpio_chip_array[dw_gpio_chip_count];
 
-	chip->dr = (void *)(uintptr_t)addr + (bank * 0xc);
-	chip->ext = (void *)(uintptr_t)addr + (bank * 4) + 0x50;
+	vaddr = ioremap(addr, size);
+
+	chip->dr = (void *)(uintptr_t)vaddr + (bank * 0xc);
+	chip->ext = (void *)(uintptr_t)vaddr + (bank * 4) + 0x50;
 	chip->chip.driver = &fdt_gpio_designware;
 	chip->chip.id = phandle;
 	chip->chip.ngpio = nr_pins;

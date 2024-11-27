@@ -22,7 +22,7 @@
 #define SIFIVE_GPIO_BIT(b)	(1U << (b))
 
 struct sifive_gpio_chip {
-	unsigned long addr;
+	void *addr;
 	struct gpio_chip chip;
 };
 
@@ -67,19 +67,19 @@ static int sifive_gpio_init(void *fdt, int nodeoff, u32 phandle,
 {
 	int rc;
 	struct sifive_gpio_chip *chip;
-	uint64_t addr;
+	uint64_t addr, size;
 
 	chip = sbi_zalloc(sizeof(*chip));
 	if (!chip)
 		return SBI_ENOMEM;
 
-	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, NULL);
+	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, &size);
 	if (rc) {
 		sbi_free(chip);
 		return rc;
 	}
 
-	chip->addr = addr;
+	chip->addr = ioremap(addr, size);
 	chip->chip.driver = &fdt_gpio_sifive;
 	chip->chip.id = phandle;
 	chip->chip.ngpio = SIFIVE_GPIO_PINS_DEF;
