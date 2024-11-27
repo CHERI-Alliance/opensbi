@@ -11,8 +11,27 @@
 #define __RISCV_IO_H__
 
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/riscv_barrier.h>
 #include <sbi/sbi_types.h>
+
+#if defined(__CHERI_PURE_CAPABILITY__)
+static inline void *ioremap(unsigned long base, unsigned long size)
+{
+	void *ptr = cheri_address_set(cheri_infinite_cap_get(), base);
+	ptr = cheri_bounds_set(ptr, size);
+	ptr = cheri_perms_and(ptr, CHERI_PERM_IO);
+	ptr = cheri_is_invalid(ptr) ? NULL : ptr;
+
+	return (void *)ptr;
+}
+
+#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+static inline void *ioremap(unsigned long base, unsigned long size)
+{
+	return (void *)base;
+}
+#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
 
 static inline void __raw_writeb(u8 val, volatile void *addr)
 {
