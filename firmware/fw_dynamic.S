@@ -84,6 +84,11 @@ fw_save_info:
 fw_next_arg1:
 	PTR_L	PREG(a0), _dynamic_next_arg1
 	XREG_L	a0, (PREG(a0))
+#if defined(__CHERI_PURE_CAPABILITY__)
+	scaddr	PREG(a0), PREG(a3), a0
+	li a1,	CHERI_PERM_DATA		/* FDT is a read-write data */
+	acperm	PREG(a0), PREG(a0), a1
+#endif /* defined(__CHERI_PURE_CAPABILITY__) */
 	ret
 
 	.section .entry, "ax", %progbits
@@ -96,6 +101,9 @@ fw_next_arg1:
 fw_next_addr:
 	PTR_L	PREG(a0), _dynamic_next_addr
 	XREG_L	a0, (PREG(a0))
+#if defined(__CHERI_PURE_CAPABILITY__)
+	scaddr	PREG(a0), PREG(a3), a0
+#endif /* defined(__CHERI_PURE_CAPABILITY__) */
 	ret
 
 	.section .entry, "ax", %progbits
@@ -125,13 +133,27 @@ fw_options:
 
 	.section .data
 	.align 3
+	.type  _dynamic_next_arg1, @object
 _dynamic_next_arg1:
 	RISCV_LONG 0x0
+	.size _dynamic_next_arg1, . - _dynamic_next_arg1
+
+	.type  _dynamic_next_addr, @object
 _dynamic_next_addr:
 	RISCV_ADDR 0x0
+	.size _dynamic_next_addr, . - _dynamic_next_addr
+
+	.type  _dynamic_next_mode, @object
 _dynamic_next_mode:
 	RISCV_LONG PRV_S
+	.size _dynamic_next_mode, . - _dynamic_next_mode
+
+	.type  _dynamic_options, @object
 _dynamic_options:
 	RISCV_LONG 0x0
+	.size _dynamic_options, . - _dynamic_options
+
+	.type  _dynamic_boot_hart, @object
 _dynamic_boot_hart:
 	RISCV_LONG -1
+	.size _dynamic_boot_hart, . - _dynamic_boot_hart

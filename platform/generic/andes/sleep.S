@@ -65,6 +65,8 @@ enable_L1_cache:
 	.section .text, "ax", %progbits
 	.align 3
 	.global __ae350_enable_coherency_warmboot
+	.type   __ae350_enable_coherency_warmboot, @function
 __ae350_enable_coherency_warmboot:
 	call ra, __ae350_enable_coherency
 	j _start_warm
+	.size __ae350_enable_coherency_warmboot, . - __ae350_enable_coherency_warmboot
