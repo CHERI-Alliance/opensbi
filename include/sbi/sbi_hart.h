@@ -148,8 +148,8 @@ bool sbi_hart_has_csr(struct sbi_scratch *scratch, enum sbi_hart_csrs csr);
 void __attribute__((noreturn)) sbi_hart_hang(void);
 
 void __attribute__((noreturn))
-sbi_hart_switch_mode(unsigned long arg0, unsigned long arg1,
-		     unsigned long next_addr, unsigned long next_mode,
+sbi_hart_switch_mode(uintptr_t arg0, uintptr_t arg1,
+		     uintptr_t next_addr, unsigned long next_mode,
 		     bool next_virt);
 
 #endif
