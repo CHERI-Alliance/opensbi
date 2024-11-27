@@ -997,7 +997,7 @@
 	(SHIFT_RIGHT((insn), (pos) - LOG_REGBYTES) & REG_MASK)
 
 #define REG_PTR(insn, pos, regs)	\
-	(ulong *)((ulong)(regs) + REG_OFFSET(insn, pos))
+	(uintptr_t *)((uintptr_t)(regs) + REG_OFFSET(insn, pos))
 
 #define GET_RM(insn)			(((insn) >> 12) & 7)
 
