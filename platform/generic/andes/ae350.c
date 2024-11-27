@@ -94,7 +94,7 @@ static void ae350_hsm_device_init(const void *fdt)
 {
 	int rc;
 
-	rc = fdt_parse_compat_addr(fdt, (uint64_t *)&smu.addr,
+	rc = fdt_parse_compat_addr_size(fdt, (uint64_t *)&smu.addr, NULL,
 				   "andestech,atcsmu");
 
 	if (!rc) {
