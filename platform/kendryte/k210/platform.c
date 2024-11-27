@@ -23,11 +23,11 @@
 
 extern const char dt_k210_start[];
 
-unsigned long fw_platform_init(unsigned long arg0, unsigned long arg1,
-				unsigned long arg2, unsigned long arg3,
-				unsigned long arg4)
+uintptr_t fw_platform_init(uintptr_t, uintptr_t arg1,
+				uintptr_t arg2, uintptr_t arg3,
+				uintptr_t arg4)
 {
-	return (unsigned long)&dt_k210_start[0];
+	return (uintptr_t)&dt_k210_start[0];
 }
 
 static struct plic_data plic = {

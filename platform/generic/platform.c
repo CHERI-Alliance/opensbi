@@ -76,9 +76,9 @@ static u32 generic_hart_index2id[SBI_HARTMASK_MAX_BITS] = { 0 };
 static DECLARE_BITMAP(generic_coldboot_harts, SBI_HARTMASK_MAX_BITS);
 
 /*
- * The fw_platform_coldboot_harts_init() function is called by fw_platform_init() 
+ * The fw_platform_coldboot_harts_init() function is called by fw_platform_init()
  * function to initialize the cold boot harts allowed by the generic platform
- * according to the DT property "cold-boot-harts" in "/chosen/opensbi-config" 
+ * according to the DT property "cold-boot-harts" in "/chosen/opensbi-config"
  * DT node. If there is no "cold-boot-harts" in DT, all harts will be allowed.
  */
 static void fw_platform_coldboot_harts_init(void *fdt)
@@ -141,9 +141,9 @@ default_config:
  * FDT is unchanged (or FDT is modified in-place) then fw_platform_init()
  * can always return the original FDT location (i.e. 'arg1') unmodified.
  */
-unsigned long fw_platform_init(unsigned long arg0, unsigned long arg1,
-				unsigned long arg2, unsigned long arg3,
-				unsigned long arg4)
+uintptr_t fw_platform_init(uintptr_t arg0, uintptr_t arg1,
+				uintptr_t arg2, uintptr_t arg3,
+				uintptr_t arg4)
 {
 	const char *model;
 	void *fdt = (void *)arg1;
