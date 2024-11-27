@@ -48,8 +48,10 @@ typedef int			bool;
 typedef unsigned long		ulong;
 #if defined(__CHERI_PURE_CAPABILITY__)
 typedef __uintcap_t		uintptr_t;
+#define PRIPTR			"#p"
 #else
 typedef unsigned long		uintptr_t;
+#define PRIPTR			"p"
 #endif
 typedef unsigned long		size_t;
 typedef long			ssize_t;
