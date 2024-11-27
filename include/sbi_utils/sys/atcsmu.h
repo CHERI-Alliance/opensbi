@@ -48,7 +48,7 @@
 /* clang-format on */
 
 struct smu_data {
-	unsigned long addr;
+	void *addr;
 };
 
 int smu_set_wakeup_events(struct smu_data *smu, u32 events, u32 hartid);
