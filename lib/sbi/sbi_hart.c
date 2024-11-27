@@ -477,13 +477,13 @@ static unsigned long hart_pmp_get_allowed_addr(void)
 	unsigned long val = 0;
 	struct sbi_trap_info trap = {0};
 
-	csr_write_allowed(CSR_PMPCFG0, &trap, 0);
+	csr_write_allowed(CSR_PMPCFG0, (uintptr_t)&trap, 0);
 	if (trap.cause)
 		return 0;
 
-	csr_write_allowed(CSR_PMPADDR0, &trap, PMP_ADDR_MASK);
+	csr_write_allowed(CSR_PMPADDR0, (uintptr_t)&trap, PMP_ADDR_MASK);
 	if (!trap.cause) {
-		val = csr_read_allowed(CSR_PMPADDR0, &trap);
+		val = csr_read_allowed(CSR_PMPADDR0, (uintptr_t)&trap);
 		if (trap.cause)
 			val = 0;
 	}
@@ -501,17 +501,17 @@ static int hart_mhpm_get_allowed_bits(void)
 	 * It is assumed that platforms will implement same number of bits for
 	 * all the performance counters including mcycle/minstret.
 	 */
-	csr_write_allowed(CSR_MHPMCOUNTER3, &trap, val);
+	csr_write_allowed(CSR_MHPMCOUNTER3, (uintptr_t)&trap, val);
 	if (!trap.cause) {
-		val = csr_read_allowed(CSR_MHPMCOUNTER3, &trap);
+		val = csr_read_allowed(CSR_MHPMCOUNTER3, (uintptr_t)&trap);
 		if (trap.cause)
 			return 0;
 	}
 	num_bits = sbi_fls(val) + 1;
 #if __riscv_xlen == 32
-	csr_write_allowed(CSR_MHPMCOUNTER3H, &trap, val);
+	csr_write_allowed(CSR_MHPMCOUNTER3H, (uintptr_t)&trap, val);
 	if (!trap.cause) {
-		val = csr_read_allowed(CSR_MHPMCOUNTER3H, &trap);
+		val = csr_read_allowed(CSR_MHPMCOUNTER3H, (uintptr_t)&trap);
 		if (trap.cause)
 			return num_bits;
 	}
@@ -542,9 +542,9 @@ static int hart_detect_features(struct sbi_scratch *scratch)
 	hfeatures->priv_version = SBI_HART_PRIV_VER_UNKNOWN;
 
 #define __check_hpm_csr(__csr, __mask) 					  \
-	oldval = csr_read_allowed(__csr, &trap);			  \
+	oldval = csr_read_allowed(__csr, (uintptr_t)&trap);		  \
 	if (!trap.cause) {						  \
-		csr_write_allowed(__csr, &trap, 1UL);			  \
+		csr_write_allowed(__csr, (uintptr_t)&trap, 1UL);	  \
 		if (!trap.cause && csr_swap(__csr, oldval) == 1UL) {	  \
 			(hfeatures->__mask) |= 1 << (__csr - CSR_MCYCLE); \
 		}							  \
@@ -563,13 +563,13 @@ static int hart_detect_features(struct sbi_scratch *scratch)
 	__check_hpm_csr_8(__csr + 0, __mask) 			  \
 	__check_hpm_csr_8(__csr + 8, __mask)
 
-#define __check_csr(__csr, __rdonly, __wrval, __field, __skip)		\
-	oldval = csr_read_allowed(__csr, &trap);			\
+#define __check_csr(__csr, __rdonly, __wrval, __field, __skip)	\
+	oldval = csr_read_allowed(__csr, (uintptr_t)&trap);		\
 	if (!trap.cause) {						\
 		if (__rdonly) {						\
 			(hfeatures->__field)++;				\
 		} else {						\
-			csr_write_allowed(__csr, &trap, __wrval);	\
+			csr_write_allowed(__csr, (uintptr_t)&trap, __wrval);\
 			if (!trap.cause) {				\
 				if ((csr_swap(__csr, oldval) & __wrval) == __wrval)	\
 					(hfeatures->__field)++;		\
@@ -634,7 +634,7 @@ __pmp_skip:
 
 
 #define __check_priv(__csr, __base_priv, __priv)			\
-	val = csr_read_allowed(__csr, &trap);				\
+	val = csr_read_allowed(__csr, (uintptr_t)&trap);		\
 	if (!trap.cause && (hfeatures->priv_version >= __base_priv)) {	\
 		hfeatures->priv_version = __priv;			\
 	}
@@ -653,7 +653,7 @@ __pmp_skip:
 
 #define __check_ext_csr(__base_priv, __csr, __ext)			\
 	if (hfeatures->priv_version >= __base_priv) {			\
-		csr_read_allowed(__csr, &trap);				\
+		csr_read_allowed(__csr, (uintptr_t)&trap);		\
 		if (!trap.cause)					\
 			__sbi_hart_update_extension(hfeatures,		\
 						    __ext, true);	\

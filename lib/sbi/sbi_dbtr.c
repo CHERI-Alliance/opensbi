@@ -168,11 +168,11 @@ int sbi_dbtr_init(struct sbi_scratch *scratch, bool coldboot)
 		goto _probed;
 
 	for (i = 0; i < RV_MAX_TRIGGERS; i++) {
-		csr_write_allowed(CSR_TSELECT, &trap, i);
+		csr_write_allowed(CSR_TSELECT, (uintptr_t)&trap, i);
 		if (trap.cause)
 			break;
 
-		val = csr_read_allowed(CSR_TSELECT, &trap);
+		val = csr_read_allowed(CSR_TSELECT, (uintptr_t)&trap);
 		if (trap.cause)
 			break;
 
@@ -183,7 +183,7 @@ int sbi_dbtr_init(struct sbi_scratch *scratch, bool coldboot)
 		if (val != i)
 			break;
 
-		val = csr_read_allowed(CSR_TINFO, &trap);
+		val = csr_read_allowed(CSR_TINFO, (uintptr_t)&trap);
 		if (trap.cause) {
 			/*
 			 * If reading tinfo caused an exception, the
@@ -191,7 +191,7 @@ int sbi_dbtr_init(struct sbi_scratch *scratch, bool coldboot)
 			 * type.
 			 */
 			tdata1 = csr_read_allowed(CSR_TDATA1,
-						  &trap);
+						  (uintptr_t)&trap);
 			if (trap.cause)
 				break;
 

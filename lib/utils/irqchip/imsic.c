@@ -242,7 +242,7 @@ void imsic_local_irqchip_init(void)
 	 */
 
 	/* If Smaia not available then do nothing */
-	csr_read_allowed(CSR_MTOPI, &trap);
+	csr_read_allowed(CSR_MTOPI, (uintptr_t)&trap);
 	if (trap.cause)
 		return;
 
