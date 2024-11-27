@@ -313,7 +313,9 @@
 /* Supervisor Trap Setup */
 #define CSR_SSTATUS			0x100
 #define CSR_SIE				0x104
-#if defined(__riscv_zcherihybrid)
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define CSR_STVEC			stvecc
+#elif defined(__riscv_zcherihybrid)
 #define CSR_STVEC			stvec
 #else
 #define CSR_STVEC			0x105
@@ -327,12 +329,16 @@
 #define CSR_SCOUNTINHIBIT		0x120
 
 /* Supervisor Trap Handling */
-#if defined(__riscv_zcherihybrid)
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define CSR_SSCRATCH		sscratchc
+#elif defined(__riscv_zcherihybrid)
 #define CSR_SSCRATCH			sscratch
 #else
 #define CSR_SSCRATCH			0x140
 #endif
-#if defined(__riscv_zcherihybrid)
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define CSR_SEPC			sepcc
+#elif defined(__riscv_zcherihybrid)
 #define CSR_SEPC			sepc
 #else
 #define CSR_SEPC			0x141
@@ -402,13 +408,17 @@
 /* Virtual Supervisor Registers (H-extension) */
 #define CSR_VSSTATUS			0x200
 #define CSR_VSIE			0x204
-#if defined(__riscv_zcherihybrid)
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define CSR_VSTVEC			vstvecc
+#elif defined(__riscv_zcherihybrid)
 #define CSR_VSTVEC			vstvec
 #else
 #define CSR_VSTVEC			0x205
 #endif
 #define CSR_VSSCRATCH			0x240
-#if defined(__riscv_zcherihybrid)
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define CSR_VSEPC			vsepcc
+#elif defined(__riscv_zcherihybrid)
 #define CSR_VSEPC			vsepc
 #else
 #define CSR_VSEPC			0x241
@@ -471,7 +481,9 @@
 #define CSR_MEDELEG			0x302
 #define CSR_MIDELEG			0x303
 #define CSR_MIE				0x304
-#if defined(__riscv_zcherihybrid)
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define CSR_MTVEC			mtvecc
+#elif defined(__riscv_zcherihybrid)
 #define CSR_MTVEC			mtvec
 #else
 #define CSR_MTVEC			0x305
@@ -484,12 +496,16 @@
 #define CSR_MENVCFGH			0x31a
 
 /* Machine Trap Handling */
-#if defined(__riscv_zcherihybrid)
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define CSR_MSCRATCH		mscratchc
+#elif defined(__riscv_zcherihybrid)
 #define CSR_MSCRATCH			mscratch
 #else
 #define CSR_MSCRATCH			0x340
 #endif
-#if defined(__riscv_zcherihybrid)
+#if defined(__CHERI_PURE_CAPABILITY__)
+#define CSR_MEPC			mepcc
+#elif defined(__riscv_zcherihybrid)
 #define CSR_MEPC			mepc
 #else
 #define CSR_MEPC			0x341
@@ -802,6 +818,7 @@
 #define CAUSE_LOAD_GUEST_PAGE_FAULT	0x15
 #define CAUSE_VIRTUAL_INST_FAULT	0x16
 #define CAUSE_STORE_GUEST_PAGE_FAULT	0x17
+#define CAUSE_CHERI_FAULT		0x1C
 
 /* Common defines for all smstateen */
 #define SMSTATEEN_MAX_COUNT		4
