@@ -26,7 +26,7 @@ enum syscon_regmap_endian {
 struct syscon_regmap {
 	u32 reg_io_width;
 	enum syscon_regmap_endian reg_endian;
-	unsigned long addr;
+	void *addr;
 	struct regmap rmap;
 };
 
@@ -186,7 +186,7 @@ static int regmap_syscon_init(void *fdt, int nodeoff, u32 phandle,
 	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, &size);
 	if (rc)
 		goto fail_free_syscon;
-	srm->addr = addr;
+	srm->addr = ioremap(addr, size);
 
 	srm->rmap.id = phandle;
 	srm->rmap.reg_shift = 0;
