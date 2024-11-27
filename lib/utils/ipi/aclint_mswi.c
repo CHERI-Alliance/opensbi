@@ -74,7 +74,7 @@ int aclint_mswi_cold_init(struct aclint_mswi_data *mswi)
 	struct sbi_scratch *scratch;
 
 	/* Sanity checks */
-	if (!mswi || (mswi->addr & (ACLINT_MSWI_ALIGN - 1)) ||
+	if (!mswi || ((unsigned long)mswi->addr & (ACLINT_MSWI_ALIGN - 1)) ||
 	    (mswi->size < (mswi->hart_count * sizeof(u32))) ||
 	    (!mswi->hart_count || mswi->hart_count > ACLINT_MSWI_MAX_HARTS))
 		return SBI_EINVAL;
@@ -100,7 +100,7 @@ int aclint_mswi_cold_init(struct aclint_mswi_data *mswi)
 	}
 
 	/* Add MSWI regions to the root domain */
-	rc = sbi_domain_root_add_memrange(mswi->addr, mswi->size, ACLINT_MSWI_ALIGN,
+	rc = sbi_domain_root_add_memrange((unsigned long)mswi->addr, mswi->size, ACLINT_MSWI_ALIGN,
 					  SBI_DOMAIN_MEMREGION_MMIO |
 					  SBI_DOMAIN_MEMREGION_M_READABLE |
 					  SBI_DOMAIN_MEMREGION_M_WRITABLE);

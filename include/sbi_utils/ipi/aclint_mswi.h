@@ -20,7 +20,7 @@
 
 struct aclint_mswi_data {
 	/* Public details */
-	unsigned long addr;
+	void *addr;
 	unsigned long size;
 	u32 first_hartid;
 	u32 hart_count;
