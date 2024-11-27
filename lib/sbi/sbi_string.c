@@ -11,7 +11,7 @@
  * Simple libc functions. These are not optimized at all and might have some
  * bugs as well. Use any optimized routines from newlib or glibc if required.
  */
-
+#include <sbi/riscv_cheri.h>
 #include <sbi/sbi_string.h>
 
 /*
@@ -126,6 +126,32 @@ void *sbi_memcpy(void *dest, const void *src, size_t count)
 	char *temp1	  = dest;
 	const char *temp2 = src;
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+	if ((count >= sizeof(uintptr_t)) &&
+	    (cheri_is_aligned(temp1, sizeof(uintptr_t)) == cheri_is_aligned(temp2, sizeof(uintptr_t)))) {
+		size_t align_count = sizeof(uintptr_t);
+		do {
+			if (cheri_is_aligned(temp1, sizeof(uintptr_t)) &&
+			    cheri_is_aligned(temp2, sizeof(uintptr_t)))
+				break;
+			*temp1++ = *temp2++;
+			count--;
+			align_count--;
+		} while (count >= sizeof(uintptr_t) && align_count);
+	}
+
+	if (count >= sizeof(uintptr_t) &&
+	    cheri_is_aligned(temp1, sizeof(uintptr_t)) &&
+	    cheri_is_aligned(temp2, sizeof(uintptr_t))) {
+		do {
+			*(uintptr_t *)temp1 = *(const uintptr_t *)temp2;
+			temp1 += sizeof(uintptr_t);
+			temp2 += sizeof(uintptr_t);
+			count -= sizeof(uintptr_t);
+		} while (count >= sizeof(uintptr_t));
+	}
+#endif
+
 	while (count > 0) {
 		*temp1++ = *temp2++;
 		count--;
@@ -143,16 +169,67 @@ void *sbi_memmove(void *dest, const void *src, size_t count)
 		return dest;
 
 	if (dest < src) {
+#if defined(__CHERI_PURE_CAPABILITY__)
+		if ((count >= sizeof(uintptr_t)) &&
+		    (cheri_is_aligned(temp1, sizeof(uintptr_t)) == cheri_is_aligned(temp2, sizeof(uintptr_t)))) {
+			size_t align_count = sizeof(uintptr_t);
+			do {
+				if (cheri_is_aligned(temp1, sizeof(uintptr_t)) &&
+				    cheri_is_aligned(temp2, sizeof(uintptr_t)))
+					break;
+				*temp1++ = *temp2++;
+				count--;
+				align_count--;
+			} while (count >= sizeof(uintptr_t) && align_count);
+		}
+
+		if (count >= sizeof(uintptr_t) &&
+		    cheri_is_aligned(temp1, sizeof(uintptr_t)) &&
+		    cheri_is_aligned(temp2, sizeof(uintptr_t))) {
+			do {
+				*(uintptr_t *)temp1 = *(const uintptr_t *)temp2;
+				temp1 += sizeof(uintptr_t);
+				temp2 += sizeof(uintptr_t);
+				count -= sizeof(uintptr_t);
+			} while (count >= sizeof(uintptr_t));
+		}
+#endif
 		while (count > 0) {
 			*temp1++ = *temp2++;
 			count--;
 		}
 	} else {
-		temp1 = (char *)dest + count - 1;
-		temp2 = (char *)src + count - 1;
+		temp1 = (char *)dest + count;
+		temp2 = (char *)src + count;
+
+#if defined(__CHERI_PURE_CAPABILITY__)
+		if ((count >= sizeof(uintptr_t)) &&
+		    (cheri_is_aligned(temp1, sizeof(uintptr_t)) == cheri_is_aligned(temp2, sizeof(uintptr_t)))) {
+			size_t align_count = sizeof(uintptr_t);
+			do {
+				if (cheri_is_aligned(temp1, sizeof(uintptr_t)) &&
+				    cheri_is_aligned(temp2, sizeof(uintptr_t)))
+					break;
+				*--temp1 = *--temp2;
+				count--;
+				align_count--;
+			} while (count >= sizeof(uintptr_t) && align_count);
+		}
+
+		if (count >= sizeof(uintptr_t) &&
+		    cheri_is_aligned(temp1, sizeof(uintptr_t)) &&
+		    cheri_is_aligned(temp2, sizeof(uintptr_t))) {
+			do {
+				temp1 -= sizeof(uintptr_t);
+				temp2 -= sizeof(uintptr_t);
+				*(uintptr_t *)temp1 = *(const uintptr_t *)temp2;
+				count -= sizeof(uintptr_t);
+			} while (count >= sizeof(uintptr_t));
+		}
+#endif
 
 		while (count > 0) {
-			*temp1-- = *temp2--;
+			*--temp1 = *--temp2;
 			count--;
 		}
 	}
