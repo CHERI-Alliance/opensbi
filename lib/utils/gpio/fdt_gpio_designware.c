@@ -80,15 +80,16 @@ static int dw_gpio_init_bank(const void *fdt, int nodeoff,
 {
 	struct dw_gpio_chip *chip;
 	const fdt32_t *val;
-	uint64_t addr;
+	uint64_t addr, size;
 	int rc, poff, nr_pins, bank, len;
+	void* vaddr = NULL;
 
 	/* need to get parent for the address property  */
 	poff = fdt_parent_offset(fdt, nodeoff);
 	if (poff < 0)
 		return SBI_EINVAL;
 
-	rc = fdt_get_node_addr_size(fdt, poff, 0, &addr, NULL);
+	rc = fdt_get_node_addr_size(fdt, poff, 0, &addr, &size);
 	if (rc)
 		return rc;
 
@@ -108,8 +109,10 @@ static int dw_gpio_init_bank(const void *fdt, int nodeoff,
 	if (!chip)
 		return SBI_ENOMEM;
 
-	chip->dr = (void *)(uintptr_t)addr + (bank * 0xc);
-	chip->ext = (void *)(uintptr_t)addr + (bank * 4) + 0x50;
+	vaddr = ioremap(addr, size);
+
+	chip->dr = (void *)(uintptr_t)vaddr + (bank * 0xc);
+	chip->ext = (void *)(uintptr_t)vaddr + (bank * 4) + 0x50;
 	chip->chip.driver = &fdt_gpio_designware;
 	chip->chip.id = nodeoff;
 	chip->chip.ngpio = nr_pins;
