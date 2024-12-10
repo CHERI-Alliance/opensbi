@@ -18,6 +18,12 @@ menu "Platform Options"
 source "$(OPENSBI_PLATFORM_SRC_DIR)/Kconfig"
 endmenu
 
+menu "CHERI extension Options"
+config CHERI_SMODE_INT_PTR_MODE
+	bool "Support smode software running in integer pointer mode (Hybrid)"
+	default n
+endmenu
+
 source "$(OPENSBI_SRC_DIR)/lib/sbi/Kconfig"
 
 source "$(OPENSBI_SRC_DIR)/lib/utils/Kconfig"

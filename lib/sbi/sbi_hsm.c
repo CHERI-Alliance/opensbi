@@ -333,9 +333,19 @@ int sbi_hsm_hart_start(struct sbi_scratch *scratch,
 	entry_count = sbi_entry_count(hartid);
 
 #if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__riscv_zcherihybrid) && defined(CONFIG_CHERI_SMODE_INT_PTR_MODE)
+	/* Form a capability boot vector from infinite capability with m-bit 
+	 * is 1 (Interger Pointer Mode).
+	 */
+	if (cheri_is_invalid(saddr))
+		saddr = (uintptr_t)cheri_build_cap_inf((unsigned long)saddr);
+	else if (!(cheri_perms_get(saddr) & CHERI_PERM_EXECUTE))
+		return SBI_EINVALID_ADDR;
+#else
 	if (cheri_is_invalid(saddr) ||
 	    !(cheri_perms_get(saddr) & CHERI_PERM_EXECUTE))
 		return SBI_EINVALID_ADDR;
+#endif
 #endif /* defined(__CHERI_PURE_CAPABILITY__) */
 
 	rscratch->next_arg1 = arg1;

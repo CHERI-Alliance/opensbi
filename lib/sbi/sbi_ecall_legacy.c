@@ -42,6 +42,13 @@ static inline int sbi_is_hart_mask_ptr_valid(ulong **pmask)
 	    (cheri_perms_get(*pmask) & CHERI_PERM_READ))
 		return SBI_OK;
 
+#if defined(__riscv_zcherihybrid) && defined(CONFIG_CHERI_SMODE_INT_PTR_MODE)
+	if (*pmask && cheri_is_invalid(*pmask)) {
+		*pmask = cheri_build_cap_r((unsigned long)*pmask, sizeof(ulong));
+		return SBI_OK;
+	}
+#endif
+
 	return SBI_EINVAL;
 #else  /* !defined(__CHERI_PURE_CAPABILITY__) */
 	return SBI_OK;
