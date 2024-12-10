@@ -9,6 +9,7 @@
  */
 
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/sbi_console.h>
 #include <sbi/sbi_domain.h>
 #include <sbi/sbi_ecall.h>
@@ -23,6 +24,29 @@
 #include <sbi/sbi_trap.h>
 #include <sbi/sbi_unpriv.h>
 #include <sbi/sbi_hart.h>
+
+/*
+ * The hart_mask is a virtual address (pointer) in legacy extension.
+ * The pointer is a capability rather then a integer on a core supports
+ * Zcheripurecap extension. sbi_is_hart_mask_ptr_valid() is used to
+ * check if the virtual pointer is valid to be used to access the
+ * hart_mask.
+ *
+ * It will return SBI_EINVAL (SBI_ERR_INVALID_PARAM) if the capabilty
+ * pointer cannot be used to read the hart_mask.
+ */
+static inline int sbi_is_hart_mask_ptr_valid(ulong **pmask)
+{
+#if defined(__CHERI_PURE_CAPABILITY__)
+	if (*pmask && cheri_is_valid(*pmask) &&
+	    (cheri_perms_get(*pmask) & CHERI_PERM_READ))
+		return SBI_OK;
+
+	return SBI_EINVAL;
+#else  /* !defined(__CHERI_PURE_CAPABILITY__) */
+	return SBI_OK;
+#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+}
 
 static bool sbi_load_hart_mask_unpriv(ulong *pmask, ulong *hmask,
 				      struct sbi_trap_info *uptrap)
@@ -46,11 +70,12 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 				    struct sbi_trap_regs *regs,
 				    struct sbi_ecall_return *out)
 {
-	int ret = 0;
+	int ret = SBI_OK;
 	struct sbi_tlb_info tlb_info;
 	u32 source_hart = current_hartid();
 	struct sbi_trap_info trap = {0};
 	ulong hmask = 0;
+	ulong *pmask = NULL;
 
 	switch (extid) {
 	case SBI_EXT_0_1_SET_TIMER:
@@ -70,47 +95,63 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 		sbi_ipi_clear_smode();
 		break;
 	case SBI_EXT_0_1_SEND_IPI:
-		if (sbi_load_hart_mask_unpriv((ulong *)regs->a0,
-						&hmask, &trap)) {
-			ret = sbi_ipi_send_smode(hmask, 0);
-		} else {
-			sbi_trap_redirect(regs, &trap);
-			out->skip_regs_update = true;
+		pmask = (ulong *)regs->a0;
+		ret = sbi_is_hart_mask_ptr_valid(&pmask);
+		if (ret == SBI_OK) {
+			if (sbi_load_hart_mask_unpriv(pmask,
+							&hmask, &trap)) {
+				ret = sbi_ipi_send_smode(hmask, 0);
+			} else {
+				sbi_trap_redirect(regs, &trap);
+				out->skip_regs_update = true;
+			}
 		}
 		break;
 	case SBI_EXT_0_1_REMOTE_FENCE_I:
-		if (sbi_load_hart_mask_unpriv((ulong *)regs->a0,
-						&hmask, &trap)) {
-			SBI_TLB_INFO_INIT(&tlb_info, 0, 0, 0, 0,
-					  SBI_TLB_FENCE_I, source_hart);
-			ret = sbi_tlb_request(hmask, 0, &tlb_info);
-		} else {
-			sbi_trap_redirect(regs, &trap);
-			out->skip_regs_update = true;
+		pmask = (ulong *)regs->a0;
+		ret = sbi_is_hart_mask_ptr_valid(&pmask);
+		if (ret == SBI_OK) {
+			if (sbi_load_hart_mask_unpriv(pmask,
+							&hmask, &trap)) {
+				SBI_TLB_INFO_INIT(&tlb_info, 0, 0, 0, 0,
+						SBI_TLB_FENCE_I, source_hart);
+				ret = sbi_tlb_request(hmask, 0, &tlb_info);
+			} else {
+				sbi_trap_redirect(regs, &trap);
+				out->skip_regs_update = true;
+			}
 		}
 		break;
 	case SBI_EXT_0_1_REMOTE_SFENCE_VMA:
-		if (sbi_load_hart_mask_unpriv((ulong *)regs->a0,
+		pmask = (ulong *)regs->a0;
+		ret = sbi_is_hart_mask_ptr_valid(&pmask);
+		if (ret == SBI_OK) {
+			if (sbi_load_hart_mask_unpriv(pmask,
 						&hmask, &trap)) {
-			SBI_TLB_INFO_INIT(&tlb_info, regs->a1, regs->a2, 0, 0,
-					  SBI_TLB_SFENCE_VMA, source_hart);
-			ret = sbi_tlb_request(hmask, 0, &tlb_info);
-		} else {
-			sbi_trap_redirect(regs, &trap);
-			out->skip_regs_update = true;
+				SBI_TLB_INFO_INIT(&tlb_info, regs->a1, regs->a2, 0, 0,
+						SBI_TLB_SFENCE_VMA, source_hart);
+				ret = sbi_tlb_request(hmask, 0, &tlb_info);
+			} else {
+				sbi_trap_redirect(regs, &trap);
+				out->skip_regs_update = true;
+			}
 		}
 		break;
 	case SBI_EXT_0_1_REMOTE_SFENCE_VMA_ASID:
-		if (sbi_load_hart_mask_unpriv((ulong *)regs->a0,
-						&hmask, &trap)) {
-			SBI_TLB_INFO_INIT(&tlb_info, regs->a1,
-					  regs->a2, regs->a3, 0,
-					  SBI_TLB_SFENCE_VMA_ASID,
-					  source_hart);
-			ret = sbi_tlb_request(hmask, 0, &tlb_info);
-		} else {
-			sbi_trap_redirect(regs, &trap);
-			out->skip_regs_update = true;
+		pmask = (ulong *)regs->a0;
+		ret = sbi_is_hart_mask_ptr_valid(&pmask);
+		if (ret == SBI_OK) {
+			if (sbi_load_hart_mask_unpriv(pmask,
+							&hmask, &trap)) {
+				SBI_TLB_INFO_INIT(&tlb_info, regs->a1,
+						regs->a2, regs->a3, 0,
+						SBI_TLB_SFENCE_VMA_ASID,
+						source_hart);
+				ret = sbi_tlb_request(hmask, 0, &tlb_info);
+			} else {
+				sbi_trap_redirect(regs, &trap);
+				out->skip_regs_update = true;
+			}
 		}
 		break;
 	case SBI_EXT_0_1_SHUTDOWN:
