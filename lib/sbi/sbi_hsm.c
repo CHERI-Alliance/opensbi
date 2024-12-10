@@ -11,6 +11,7 @@
 #include <sbi/riscv_barrier.h>
 #include <sbi/riscv_encoding.h>
 #include <sbi/riscv_atomic.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/sbi_bitops.h>
 #include <sbi/sbi_console.h>
 #include <sbi/sbi_domain.h>
@@ -330,6 +331,12 @@ int sbi_hsm_hart_start(struct sbi_scratch *scratch,
 
 	init_count = sbi_init_count(hartid);
 	entry_count = sbi_entry_count(hartid);
+
+#if defined(__CHERI_PURE_CAPABILITY__)
+	if (cheri_is_invalid(saddr) ||
+	    !(cheri_perms_get(saddr) & CHERI_PERM_EXECUTE))
+		return SBI_EINVALID_ADDR;
+#endif /* defined(__CHERI_PURE_CAPABILITY__) */
 
 	rscratch->next_arg1 = arg1;
 	rscratch->next_addr = saddr;
