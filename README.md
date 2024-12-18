@@ -1,4 +1,4 @@
-# opensbi
+# OpenSBI
 OpenSBI with CHERI-RISC-V support
 
-It's coming... Check back later!
+Codasip's OpenSBI version with CHERI support can be checked out from the [[codasip-cheri-riscv](https://github.com/CHERI-Alliance/opensbi/tree/codasip-cheri-riscv)] branch.
