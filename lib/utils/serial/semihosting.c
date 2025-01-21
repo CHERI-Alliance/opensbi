@@ -71,7 +71,7 @@ bool semihosting_enabled(void)
 		"	.size _semihost_test_vector, . - _semihost_test_vector\n"
 
 		"_semihost_test_vector_next:\n"
-		"	" PTR_L " %[tmp2], _semihost_test_vector\n"
+		"	" PC_PTR_L " %[tmp2], _semihost_test_vector\n"
 		"	csrrw %[tmp2], " STR(CSR_MTVEC) ", %[tmp2]\n"
 		"	.align 4\n"
 		"	slli zero, zero, 0x1f\n"
