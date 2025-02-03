@@ -164,16 +164,9 @@ cheri_cap_init:
 	li t6,	CHERI_PERM_EXECUTABLE	/* function pointer */
 	acperm	PREG(t5), PREG(t5), t6
 
-	/* Seal entry */
-	/* Only seal the function whcih is not used for exception handler */
-	PC_PTR_L	PREG(t6), __sbi_expected_trap
-	beq		t5, t6, 9f
-	PC_PTR_L	PREG(t6), __sbi_expected_trap_hext
-	beq		t5, t6, 9f
-	PC_PTR_L	PREG(t6), _trap_handler
-	beq		t5, t6, 9f
-	PC_PTR_L	PREG(t6), _trap_handler_hyp
-	beq		t5, t6, 9f
+	li	t6, CAP_RELOC_CR_FLAG_DONT_SEAL
+	and	t6, t6, t4
+	bnez	t6, 9f
 	sentry	PREG(t5), PREG(t5)
 9:
 	PREG_S	PREG(t5), 0(PREG(t3))
@@ -834,6 +827,9 @@ memcmp:
 	.align 3
 	.globl _trap_handler
 	.type  _trap_handler, @function
+#if defined(__CHERI_PURE_CAPABILITY__)
+	.dont_seal _trap_handler
+#endif
 _trap_handler:
 	TRAP_SAVE_AND_SETUP_SP_T0
 
@@ -858,6 +854,9 @@ _trap_handler:
 	.align 3
 	.globl _trap_handler_hyp
 	.type  _trap_handler_hyp, @function
+#if defined(__CHERI_PURE_CAPABILITY__)
+	.dont_seal _trap_handler_hyp
+#endif
 _trap_handler_hyp:
 	TRAP_SAVE_AND_SETUP_SP_T0
 

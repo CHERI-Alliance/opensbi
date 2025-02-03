@@ -9,6 +9,9 @@
 	.align 3
 	.globl _thead_tlb_flush_fixup_trap_handler
 	.type  _thead_tlb_flush_fixup_trap_handler, @function
+#if defined(__CHERI_PURE_CAPABILITY__)
+	.dont_seal _thead_tlb_flush_fixup_trap_handler
+#endif
 _thead_tlb_flush_fixup_trap_handler:
 	sfence.vma zero, t0
 	j _trap_handler
