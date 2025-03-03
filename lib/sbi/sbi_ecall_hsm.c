@@ -15,6 +15,7 @@
 #include <sbi/sbi_hsm.h>
 #include <sbi/sbi_scratch.h>
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_cheri.h>
 
 static int sbi_ecall_hsm_handler(unsigned long extid, unsigned long funcid,
 				 struct sbi_trap_regs *regs,
@@ -27,6 +28,14 @@ static int sbi_ecall_hsm_handler(unsigned long extid, unsigned long funcid,
 
 	switch (funcid) {
 	case SBI_EXT_HSM_HART_START:
+#if defined(__CHERI_PURE_CAPABILITY__)
+		/* If hsm ecall caller is running in integer pointer executrion mode,
+		 * deiver a capability boot vector from infinite capability with m-bit
+		 * is 1 (Interger Pointer Mode) with the address of the integer pointer.
+		 */
+		if (cheri_is_integer_pointer_mode_execution(regs->mepc) && cheri_is_invalid(regs->a1))
+			regs->a1 = (uintptr_t)cheri_build_cap_inf((unsigned long)regs->a1);
+#endif
 		ret = sbi_hsm_hart_start(scratch, sbi_domain_thishart_ptr(),
 					 regs->a0, regs->a1, smode, regs->a2);
 		break;
