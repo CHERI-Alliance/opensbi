@@ -25,20 +25,20 @@
 #include <sbi/sbi_hart.h>
 
 /*
- * The hart_mask is a virtual address (pointer) in legacy extension.
- * The pointer is a capability rather then a integer on a core supports
- * Zcheripurecap extension. sbi_is_hart_mask_ptr_valid() is used to
- * check if the virtual pointer is valid to be used to access the
- * hart_mask.
+ * The hart_mask is a virtual address pointer in legacy extension.
+ * But the pointer is a capability pointer rather then a integer pointer
+ * on a core supports Zcheripurecap extension.
+ * sbi_is_hart_mask_ptr_valid() is used to check if the virtual address
+ * pointer is valid to be used to access the hart_mask.
  *
  * It will return SBI_EINVAL (SBI_ERR_INVALID_PARAM) if the capabilty
  * pointer cannot be used to read the hart_mask.
  */
-static inline int sbi_is_hart_mask_ptr_valid(ulong **pmask)
+static inline int sbi_is_hart_mask_ptr_valid(ulong *pmask)
 {
 #if defined(__CHERI_PURE_CAPABILITY__)
-	if (*pmask && cheri_is_valid(*pmask) &&
-	    (cheri_perms_get(*pmask) & CHERI_PERM_READ))
+	if (pmask && cheri_is_valid(pmask) &&
+	    (cheri_perms_get(pmask) & CHERI_PERM_READ))
 		return SBI_OK;
 
 	return SBI_EINVAL;
@@ -95,7 +95,7 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 		break;
 	case SBI_EXT_0_1_SEND_IPI:
 		pmask = (ulong *)regs->a0;
-		ret = sbi_is_hart_mask_ptr_valid(&pmask);
+		ret = sbi_is_hart_mask_ptr_valid(pmask);
 		if (ret == SBI_OK) {
 			if (sbi_load_hart_mask_unpriv(pmask,
 						      &hmask, &hbase, &trap)) {
@@ -108,7 +108,7 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 		break;
 	case SBI_EXT_0_1_REMOTE_FENCE_I:
 		pmask = (ulong *)regs->a0;
-		ret = sbi_is_hart_mask_ptr_valid(&pmask);
+		ret = sbi_is_hart_mask_ptr_valid(pmask);
 		if (ret == SBI_OK) {
 			if (sbi_load_hart_mask_unpriv(pmask,
 						      &hmask, &hbase, &trap)) {
@@ -123,7 +123,7 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 		break;
 	case SBI_EXT_0_1_REMOTE_SFENCE_VMA:
 		pmask = (ulong *)regs->a0;
-		ret = sbi_is_hart_mask_ptr_valid(&pmask);
+		ret = sbi_is_hart_mask_ptr_valid(pmask);
 		if (ret == SBI_OK) {
 			if (sbi_load_hart_mask_unpriv(pmask,
 					      &hmask, &hbase, &trap)) {
@@ -138,7 +138,7 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 		break;
 	case SBI_EXT_0_1_REMOTE_SFENCE_VMA_ASID:
 		pmask = (ulong *)regs->a0;
-		ret = sbi_is_hart_mask_ptr_valid(&pmask);
+		ret = sbi_is_hart_mask_ptr_valid(pmask);
 		if (ret == SBI_OK) {
 			if (sbi_load_hart_mask_unpriv(pmask,
 						      &hmask, &hbase, &trap)) {
