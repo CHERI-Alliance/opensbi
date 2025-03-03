@@ -74,6 +74,15 @@ static inline void *cheri_build_cap_inf(unsigned long offset)
 	void *ptr = cheri_address_set(cheri_infinite_cap_get(), offset);
 	return (void *)ptr;
 }
+
+static inline bool cheri_is_integer_pointer_mode_execution(const uintptr_t exe_cap)
+{
+	unsigned long mode = 0;
+#if defined(__riscv_zcherihybrid)
+	__asm__ __volatile__("gcmode %0, %1\n" : "+r" (mode) : "C" (exe_cap));
+#endif
+	return (bool)mode;
+}
 #endif
 #endif /* __ASSEMBLER__ */
 
