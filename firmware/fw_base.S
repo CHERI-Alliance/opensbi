@@ -493,12 +493,12 @@ _start_warm:
 #endif
 
 	/* Setup trap handler */
-	PTR_L	PREG(a4), _trap_handler
+	PC_PTR_L	PREG(a4), _trap_handler
 	csrr	a5, CSR_MISA
 	srli	a5, a5, ('H' - 'A')
 	andi	a5, a5, 0x1
 	beq	a5, zero, _skip_trap_handler_hyp
-	PTR_L	PREG(a4), _trap_handler_hyp
+	PC_PTR_L	PREG(a4), _trap_handler_hyp
 _skip_trap_handler_hyp:
 	csrw	CSR_MTVEC, PREG(a4)
 
@@ -799,9 +799,6 @@ memcmp:
 	.align 3
 	.globl _trap_handler
 	.type  _trap_handler, @function
-#if defined(__CHERI_PURE_CAPABILITY__)
-	.dont_seal _trap_handler
-#endif
 _trap_handler:
 	TRAP_SAVE_AND_SETUP_SP_T0
 
@@ -826,9 +823,6 @@ _trap_handler:
 	.align 3
 	.globl _trap_handler_hyp
 	.type  _trap_handler_hyp, @function
-#if defined(__CHERI_PURE_CAPABILITY__)
-	.dont_seal _trap_handler
-#endif
 _trap_handler_hyp:
 	TRAP_SAVE_AND_SETUP_SP_T0
 

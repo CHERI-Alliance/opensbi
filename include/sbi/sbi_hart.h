@@ -12,6 +12,7 @@
 
 #include <sbi/sbi_types.h>
 #include <sbi/sbi_bitops.h>
+#include <sbi/riscv_cheri.h>
 
 /** Possible privileged specification versions of a hart */
 enum sbi_hart_priv_versions {
@@ -113,7 +114,12 @@ int sbi_hart_init(struct sbi_scratch *scratch, bool cold_boot);
 extern void (*sbi_hart_expected_trap)(void);
 static inline uintptr_t sbi_hart_expected_trap_addr(void)
 {
+#ifdef __CHERI_PURE_CAPABILITY__
+	return (uintptr_t)cheri_address_set(cheri_pcc_get(),
+	    cheri_address_get(sbi_hart_expected_trap));
+#else
 	return (uintptr_t)sbi_hart_expected_trap;
+#endif
 }
 
 unsigned int sbi_hart_mhpm_mask(struct sbi_scratch *scratch);
