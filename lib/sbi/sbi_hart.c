@@ -9,6 +9,7 @@
 
 #include <sbi/riscv_asm.h>
 #include <sbi/riscv_barrier.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/riscv_encoding.h>
 #include <sbi/riscv_fp.h>
 #include <sbi/sbi_bitops.h>
@@ -764,6 +765,11 @@ int sbi_hart_init(struct sbi_scratch *scratch, bool cold_boot)
 		if (misa_extension('H'))
 			sbi_hart_expected_trap = &__sbi_expected_trap_hext;
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+		sbi_hart_expected_trap = cheri_address_set(cheri_pcc_get(),
+						(uintptr_t)sbi_hart_expected_trap);
+#endif
+
 		hart_features_offset = sbi_scratch_alloc_offset(
 					sizeof(struct sbi_hart_features));
 		if (!hart_features_offset)
@@ -889,7 +895,7 @@ sbi_hart_switch_mode(uintptr_t arg0, uintptr_t arg1,
 		"mv ct4, cnull\n"
 		"mv ct5, cnull\n"
 		"mv ct6, cnull\n"
-	    : : PTR_REG(a0), PTR_REG(a1));  
+	    : : PTR_REG(a0), PTR_REG(a1));
 #endif
 	__asm__ __volatile__("mret" : : PTR_REG(a0), PTR_REG(a1));
 	__builtin_unreachable();

@@ -22,9 +22,6 @@
 	.align 3
 	.global __sbi_expected_trap
 	.type 	__sbi_expected_trap, @function
-#if defined(__CHERI_PURE_CAPABILITY__)
-	.dont_seal __sbi_expected_trap
-#endif
 __sbi_expected_trap:
 	/* Without H-extension so, MTVAL2 and MTINST CSRs and GVA not available */
 	li	a4, MSTATUS_MPRV
@@ -45,9 +42,6 @@ __sbi_expected_trap:
 	.align 3
 	.global __sbi_expected_trap_hext
 	.type 	__sbi_expected_trap_hext, @function
-#if defined(__CHERI_PURE_CAPABILITY__)
-	.dont_seal __sbi_expected_trap_hext
-#endif
 __sbi_expected_trap_hext:
 	/* With H-extension so, MTVAL2 and MTINST CSRs and GVA available */
 	li	a4, MSTATUS_MPRV
