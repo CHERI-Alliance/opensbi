@@ -8,6 +8,7 @@
  */
 
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/sbi_bitops.h>
 #include <sbi/sbi_console.h>
 #include <sbi/sbi_domain.h>
@@ -1062,7 +1063,13 @@ int sbi_pmu_event_get_info(unsigned long shmem_phys_lo, unsigned long shmem_phys
 
 	sbi_hart_protection_map_range(shmem_phys_lo, shmem_size);
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+	einfo = (struct sbi_pmu_event_info *)cheri_build_cap_rw(shmem_phys_lo,
+								shmem_size);
+#else
 	einfo = (struct sbi_pmu_event_info *)(shmem_phys_lo);
+#endif	
+
 	for (i = 0; i < num_events; i++) {
 		event_idx = einfo[i].event_idx;
 		event_type = pmu_event_validate(phs, event_idx, einfo[i].event_data);
