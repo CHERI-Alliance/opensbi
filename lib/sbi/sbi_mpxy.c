@@ -8,6 +8,7 @@
  */
 
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/sbi_domain.h>
 #include <sbi/sbi_error.h>
 #include <sbi/sbi_hart.h>
@@ -108,8 +109,14 @@ static inline bool mpxy_shmem_enabled(struct mpxy_state *ms)
 /** Get hart shared memory base address */
 static inline void *hart_shmem_base(struct mpxy_state *ms)
 {
+#if defined(__CHERI_PURE_CAPABILITY__)
+	return (void *)cheri_build_cap_rw(SHMEM_PHYS_ADDR(ms->shmem.shmem_addr_hi,
+							  ms->shmem.shmem_addr_lo),
+							mpxy_shmem_size);							      
+#else
 	return (void *)(unsigned long)SHMEM_PHYS_ADDR(ms->shmem.shmem_addr_hi,
 						ms->shmem.shmem_addr_lo);
+#endif		
 }
 
 /** Make sure all attributes are packed for direct memcpy in ATTR_READ */
@@ -374,8 +381,14 @@ int sbi_mpxy_set_shmem(unsigned long shmem_phys_lo,
 
 	/** Save the current shmem details in new shmem region */
 	if (flags == SBI_EXT_MPXY_SHMEM_FLAG_OVERWRITE_RETURN) {
+#if defined(__CHERI_PURE_CAPABILITY__)
+		ret_buf = (unsigned long *)cheri_build_cap_rw((ulong)SHMEM_PHYS_ADDR(shmem_phys_hi,
+								  		     shmem_phys_lo), 
+							      mpxy_shmem_size);		
+#else
 		ret_buf = (unsigned long *)(ulong)SHMEM_PHYS_ADDR(shmem_phys_hi,
 								  shmem_phys_lo);
+#endif		
 		sbi_hart_protection_map_range((unsigned long)ret_buf, mpxy_shmem_size);
 		ret_buf[0] = cpu_to_lle(ms->shmem.shmem_addr_lo);
 		ret_buf[1] = cpu_to_lle(ms->shmem.shmem_addr_hi);
