@@ -220,8 +220,8 @@ static int mips_p8700_nascent_init(void)
 	if (cpu_hart(hartid) == 0) {
 		cm_base += (cpu_core(hartid) << CM_BASE_CORE_SHIFT);
 		__raw_writeq(GCR_CORE_COH_EN_EN,
-			     (void *)(cm_base + GCR_OFF_LOCAL +
-				      GCR_CORE_COH_EN));
+			     (void *)ioremap((cm_base + GCR_OFF_LOCAL +
+				      GCR_CORE_COH_EN), 64));
 		mb();
 	}
 
@@ -244,9 +244,9 @@ static int mips_p8700_nascent_init(void)
 	if (cpu_core(hartid) == 0 && cpu_hart(hartid) == 0) {
 		/* Enable L2 prefetch */
 		__raw_writel(0xfffff110,
-			     (void *)(cm_base + L2_PFT_CONTROL_OFFSET));
+			     (void *)ioremap((cm_base + L2_PFT_CONTROL_OFFSET), 32));
 		__raw_writel(0x15ff,
-			     (void *)(cm_base + L2_PFT_CONTROL_B_OFFSET));
+			     (void *)ioremap((cm_base + L2_PFT_CONTROL_B_OFFSET), 32));
 	}
 
 	/* Per core set up */

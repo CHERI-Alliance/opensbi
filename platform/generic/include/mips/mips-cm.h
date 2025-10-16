@@ -10,6 +10,7 @@
 
 #include <mips/p8700.h>
 #include <sbi/sbi_console.h>
+#include <sbi/riscv_asm.h>
 
 /* Define 1 to print out CM read and write info */
 #define DEBUG_CM 0
@@ -24,7 +25,7 @@ static long GLOBAL_CM_BASE[CLUSTERS_IN_PLATFORM] = {CM_BASE};
 static inline u##sz read_##unit##_##name(u32 hartid, bool local_p)	\
 {									\
 	u##sz value;							\
-	long cmd_reg;							\
+	uintptr_t cmd_reg;						\
 	int cl, co;							\
 	cl = cpu_cluster(hartid);					\
 	co = cpu_core(hartid);						\
@@ -32,11 +33,11 @@ static inline u##sz read_##unit##_##name(u32 hartid, bool local_p)	\
 		  + (co << CM_BASE_CORE_SHIFT)				\
 		  + off;						\
 	if (DEBUG_CM)							\
-		sbi_printf("CM READ%d cmd_reg=%lx\n", sz, cmd_reg);	\
+		sbi_printf("CM READ%d cmd_reg=%lx\n", sz, (unsigned long)cmd_reg); \
 	if (sz == 32)							\
-		asm volatile("lw %0,0(%1)":"=r"(value):"r"(cmd_reg));	\
+		asm volatile("lw %0,0(%1)":"=r"(value):PTR_REG(cmd_reg)); \
 	else if (sz == 64)						\
-		asm volatile("ld %0,0(%1)":"=r"(value):"r"(cmd_reg));	\
+		asm volatile("ld %0,0(%1)":"=r"(value):PTR_REG(cmd_reg)); \
 	asm volatile("fence");						\
 	return value;							\
 }
@@ -44,7 +45,7 @@ static inline u##sz read_##unit##_##name(u32 hartid, bool local_p)	\
 #define CPS_ACCESSOR_W(unit, sz, base, off, name)			\
 static inline void write_##unit##_##name(u32 hartid, u##sz value, bool local_p)	\
 {									\
-	long cmd_reg;							\
+	uintptr_t cmd_reg;						\
 	int cl, co;							\
 	cl = cpu_cluster(hartid);					\
 	co = cpu_core(hartid);						\
@@ -53,11 +54,11 @@ static inline void write_##unit##_##name(u32 hartid, u##sz value, bool local_p)	
 		  + off;						\
 	if (DEBUG_CM)							\
 		sbi_printf("CM WRITE%d cmd_reg=%lx value=%lx\n", sz, 	\
-			    cmd_reg, (unsigned long)value);		\
+			    (unsigned long)cmd_reg, (unsigned long)value); \
 	if (sz == 32)							\
-		asm volatile("sw %0,0(%1)"::"r"(value),"r"(cmd_reg));	\
+		asm volatile("sw %0,0(%1)"::"r"(value),PTR_REG(cmd_reg)); \
 	else if (sz == 64)						\
-		asm volatile("sd %0,0(%1)"::"r"(value),"r"(cmd_reg));	\
+		asm volatile("sd %0,0(%1)"::"r"(value),PTR_REG(cmd_reg)); \
 	asm volatile("fence");						\
 }
 
