@@ -10,6 +10,7 @@
  */
 
 #include <sbi/riscv_asm.h>
+#include <sbi/riscv_cheri.h>
 #include <sbi/riscv_encoding.h>
 #include <sbi/sbi_error.h>
 #include <sbi/sbi_trap_ldst.h>
@@ -43,7 +44,7 @@ static inline void set_vreg(ulong vlenb, ulong which,
 			"	.option arch, +v\n\t"
 			"	vle8.v v0,  (%0)\n\t"
 			"	.option pop\n\t"
-			:: "r" (bytes) : "memory");
+			:: PTR_REG (bytes) : "memory");
 		break;
 	case 1:
 		asm volatile (
@@ -51,7 +52,7 @@ static inline void set_vreg(ulong vlenb, ulong which,
 			"	.option arch, +v\n\t"
 			"	vle8.v v8,  (%0)\n\t"
 			"	.option pop\n\t"
-			:: "r" (bytes) : "memory");
+			:: PTR_REG (bytes) : "memory");
 		break;
 	case 2:
 		asm volatile (
@@ -59,7 +60,7 @@ static inline void set_vreg(ulong vlenb, ulong which,
 			"	.option arch, +v\n\t"
 			"	vle8.v v16,  (%0)\n\t"
 			"	.option pop\n\t"
-			:: "r" (bytes) : "memory");
+			:: PTR_REG (bytes) : "memory");
 		break;
 	case 3:
 		asm volatile (
@@ -67,7 +68,7 @@ static inline void set_vreg(ulong vlenb, ulong which,
 			"	.option arch, +v\n\t"
 			"	vle8.v v24,  (%0)\n\t"
 			"	.option pop\n\t"
-			:: "r" (bytes) : "memory");
+			:: PTR_REG (bytes) : "memory");
 		break;
 	default:
 		break;
@@ -96,7 +97,7 @@ static inline void get_vreg(ulong vlenb, ulong which,
 			"	.option arch, +v\n\t"
 			"	vse8.v v0,  (%0)\n\t"
 			"	.option pop\n\t"
-			:: "r" (bytes) : "memory");
+			:: PTR_REG (bytes) : "memory");
 		break;
 	case 1:
 		asm volatile (
@@ -104,7 +105,7 @@ static inline void get_vreg(ulong vlenb, ulong which,
 			"	.option arch, +v\n\t"
 			"	vse8.v v8,  (%0)\n\t"
 			"	.option pop\n\t"
-			:: "r" (bytes) : "memory");
+			:: PTR_REG (bytes) : "memory");
 		break;
 	case 2:
 		asm volatile (
@@ -112,7 +113,7 @@ static inline void get_vreg(ulong vlenb, ulong which,
 			"	.option arch, +v\n\t"
 			"	vse8.v v16, (%0)\n\t"
 			"	.option pop\n\t"
-			:: "r" (bytes) : "memory");
+			:: PTR_REG (bytes) : "memory");
 		break;
 	case 3:
 		asm volatile (
@@ -120,7 +121,7 @@ static inline void get_vreg(ulong vlenb, ulong which,
 				".option arch, +v\n\t"
 				"vse8.v v24, (%0)\n\t"
 				".option pop\n\t"
-				:: "r" (bytes) : "memory");
+				:: PTR_REG (bytes) : "memory");
 		break;
 	default:
 		break;
@@ -202,13 +203,19 @@ int sbi_misaligned_v_ld_emulator(int rlen, union sbi_ldst_data *out_val,
 				addr = base + offset;
 			}
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+			u8 *addr_ptr = (u8*)cheri_build_cap_r(addr, stride);
+#else
+			u8 *addr_ptr = (u8*)addr;
+#endif
+
 			csr_write(CSR_VSTART, vstart);
 
 			/* obtain load data from memory */
 			for (ulong seg = 0; seg < nf; seg++) {
 				for (ulong i = 0; i < len; i++) {
 					bytes[seg * len + i] =
-						sbi_load_u8((void *)(addr + seg * len + i),
+						sbi_load_u8((void *)(addr_ptr + seg * len + i),
 							    &uptrap);
 
 					if (uptrap.cause) {
@@ -307,12 +314,18 @@ int sbi_misaligned_v_st_emulator(int wlen, union sbi_ldst_data in_val,
 				get_vreg(vlenb, vd + seg * emul, vstart * len,
 					 len, &bytes[seg * len]);
 
+#if defined(__CHERI_PURE_CAPABILITY__)
+			u8 *addr_ptr = (u8*)cheri_build_cap_rw(addr, stride);
+#else
+			u8 *addr_ptr = (u8*)addr;
+#endif					 
+
 			csr_write(CSR_VSTART, vstart);
 
 			/* write store data to memory */
 			for (ulong seg = 0; seg < nf; seg++) {
 				for (ulong i = 0; i < len; i++) {
-					sbi_store_u8((void *)(addr + seg * len + i),
+					sbi_store_u8((void *)(addr_ptr + seg * len + i),
 						     bytes[seg * len + i], &uptrap);
 					if (uptrap.cause) {
 						vsetvl(vl, vtype);
