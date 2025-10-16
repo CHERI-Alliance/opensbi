@@ -34,9 +34,9 @@ struct rpmi_cppc {
 	bool fc_db_supported;
 	enum rpmi_cppc_fast_channel_db_width fc_db_width;
 	enum rpmi_cppc_fast_channel_cppc_mode mode;
-	ulong fc_perf_request_addr;
-	ulong fc_perf_feedback_addr;
-	ulong fc_db_addr;
+	void *fc_perf_request_addr;
+	void *fc_perf_feedback_addr;
+	void *fc_db_addr;
 	u64 fc_db_setmask;
 	u64 fc_db_preservemask;
 };
@@ -207,6 +207,8 @@ static int rpmi_cppc_update_hart_scratch(struct mbox_chan *chan)
 	unsigned long fc_region_addr = 0;
 	unsigned long fc_region_size = 0;
 	unsigned long fc_db_addr = 0;
+	void *fc_region_ptr = NULL;
+	void *fc_db_ptr = NULL;
 	u64 fc_db_setmask = 0;
 	u64 fc_db_preservemask = 0;
 
@@ -245,6 +247,8 @@ static int rpmi_cppc_update_hart_scratch(struct mbox_chan *chan)
 		if (rc)
 			return rc;
 
+		fc_region_ptr = ioremap(fc_region_addr, fc_region_size);
+
 		cppc_mode = (fresp.flags & RPMI_CPPC_FAST_CHANNEL_CPPC_MODE_MASK) >>
 					RPMI_CPPC_FAST_CHANNEL_CPPC_MODE_POS;
 		fc_db_supported = fresp.flags &
@@ -256,6 +260,23 @@ static int rpmi_cppc_update_hart_scratch(struct mbox_chan *chan)
 						fresp.db_setmask_lo;
 		fc_db_preservemask = (u64)fresp.db_preservemask_hi << 32 |
 						fresp.db_preservemask_lo;
+
+		switch (fc_db_width) {
+		case RPMI_CPPC_FAST_CHANNEL_DB_WIDTH_8:
+			fc_db_ptr = ioremap(fc_db_addr, 8);
+			break;
+		case RPMI_CPPC_FAST_CHANNEL_DB_WIDTH_16:
+			fc_db_ptr = ioremap(fc_db_addr, 16);
+			break;
+		case RPMI_CPPC_FAST_CHANNEL_DB_WIDTH_32:
+			fc_db_ptr = ioremap(fc_db_addr, 32);
+			break;
+		case RPMI_CPPC_FAST_CHANNEL_DB_WIDTH_64:
+			fc_db_ptr = ioremap(fc_db_addr, 64);
+			break;
+		default:
+			break;
+		}							
 	}
 
 	/* Get the hart list and depending on the fast channel support
@@ -295,21 +316,21 @@ static int rpmi_cppc_update_hart_scratch(struct mbox_chan *chan)
 					continue;
 
 #if __riscv_xlen == 32
-				cppc->fc_perf_request_addr = fc_region_addr +
+				cppc->fc_perf_request_addr = fc_region_ptr +
 							hfresp.fc_perf_request_offset_lo;
-				cppc->fc_perf_feedback_addr = fc_region_addr +
+				cppc->fc_perf_feedback_addr = fc_region_ptr +
 							hfresp.fc_perf_feedback_offset_lo;
 #else
-				cppc->fc_perf_request_addr = fc_region_addr +
+				cppc->fc_perf_request_addr = fc_region_ptr +
 					((ulong)hfresp.fc_perf_request_offset_hi << 32 |
 					hfresp.fc_perf_request_offset_lo);
 
-				cppc->fc_perf_feedback_addr = fc_region_addr +
+				cppc->fc_perf_feedback_addr = fc_region_ptr +
 					((ulong)hfresp.fc_perf_feedback_offset_hi << 32 |
 					hfresp.fc_perf_feedback_offset_lo);
 #endif
 				cppc->fc_db_supported = fc_db_supported;
-				cppc->fc_db_addr = fc_db_addr;
+				cppc->fc_db_addr = fc_db_ptr;
 				cppc->fc_db_width = fc_db_width;
 
 				cppc->fc_db_setmask = fc_db_setmask;
