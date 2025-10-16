@@ -589,6 +589,7 @@ static int rpmi_shmem_transport_init(struct rpmi_shmem_mbox_controller *mctl,
 	const fdt32_t *prop;
 	int count, len, ret, qid;
 	uint64_t reg_addr, reg_size;
+	void* reg_ptr = NULL;
 	struct smq_queue_ctx *qctx;
 
 	ret = fdt_node_check_compatible(fdt, nodeoff,
@@ -645,16 +646,18 @@ static int rpmi_shmem_transport_init(struct rpmi_shmem_mbox_controller *mctl,
 		if (ret)
 			return ret;
 
+		reg_ptr = ioremap(reg_addr, reg_size);
+
 		/* calculate number of slots in each queue */
 		qctx->num_slots =
 			(reg_size - (mctl->slot_size * RPMI_QUEUE_HEADER_SLOTS)) / mctl->slot_size;
 
 		/* setup queue pointers */
-		qctx->headptr = ((void *)(unsigned long)reg_addr) +
+		qctx->headptr = ((void *)reg_ptr) +
 				RPMI_QUEUE_HEAD_SLOT * mctl->slot_size;
-		qctx->tailptr = ((void *)(unsigned long)reg_addr) +
+		qctx->tailptr = ((void *)reg_ptr) +
 				RPMI_QUEUE_TAIL_SLOT * mctl->slot_size;
-		qctx->buffer = ((void *)(unsigned long)reg_addr) +
+		qctx->buffer = ((void *)reg_ptr) +
 				RPMI_QUEUE_HEADER_SLOTS * mctl->slot_size;
 
 		/* get the queue name */
@@ -680,7 +683,7 @@ static int rpmi_shmem_transport_init(struct rpmi_shmem_mbox_controller *mctl,
 	ret = fdt_get_node_addr_size(fdt, nodeoff, qid, &reg_addr,
 				       &reg_size);
 	if (!ret && !(strncmp(name, "a2p-doorbell", strlen("a2p-doorbell")))) {
-		mctl->mb_regs = (void *)(unsigned long)reg_addr;
+		mctl->mb_regs = ioremap(reg_addr, reg_size);
 		ret = sbi_domain_root_add_memrange(reg_addr, reg_size, reg_size,
 						   (SBI_DOMAIN_MEMREGION_MMIO |
 						    SBI_DOMAIN_MEMREGION_M_READABLE |
