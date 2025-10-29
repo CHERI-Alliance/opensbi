@@ -357,6 +357,7 @@ static int printcap(char **out, u32 *out_len, uintptr_t cap,
 	*s++ = '-';
 #endif
 	*s++ = ':';
+	*s = '\0';
 	pc += prints(out, out_len, print_buf, 0, flags);
 
 	/* Print Capability Level */
