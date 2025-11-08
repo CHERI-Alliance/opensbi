@@ -20,7 +20,7 @@ static int ipi_mswi_cold_init(void *fdt, int nodeoff,
 	int rc;
 	unsigned long offset;
 	struct aclint_mswi_data *ms;
-	uint64_t addr;
+	unsigned long addr;
 
 	ms = sbi_zalloc(sizeof(*ms));
 	if (!ms)

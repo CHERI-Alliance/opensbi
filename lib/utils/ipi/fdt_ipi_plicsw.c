@@ -21,7 +21,7 @@ int fdt_plicsw_cold_ipi_init(void *fdt, int nodeoff,
 				const struct fdt_match *match)
 {
 	int rc;
-	uint64_t addr;
+	unsigned long addr;
 
 	rc = fdt_parse_plicsw_node(fdt, nodeoff, &addr, &plicsw.size,
 				   &plicsw.hart_count);
