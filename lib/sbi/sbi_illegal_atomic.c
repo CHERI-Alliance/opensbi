@@ -28,13 +28,13 @@ int sbi_illegal_atomic(ulong insn, struct sbi_trap_regs *regs)
 	static type lr_##type##aqrl(const type *addr,				\
 				struct sbi_trap_info *trap)			\
 	{									\
-		register ulong tinfo asm("a3");					\
+		register uintptr_t tinfo asm(PREG(a3));				\
 		register ulong mstatus = 0;					\
-		register ulong mtvec = (ulong)sbi_hart_expected_trap;		\
+		register uintptr_t mtvec = (uintptr_t)sbi_hart_expected_trap;	\
 		type ret = 0;							\
 		trap->cause = 0;						\
 		asm volatile(							\
-			"add %[tinfo], %[taddr], zero\n"			\
+			"mv %[tinfo], %[taddr]\n"			\
 			"csrrw %[mtvec], " STR(CSR_MTVEC) ", %[mtvec]\n"	\
 			"csrrs %[mstatus], " STR(CSR_MSTATUS) ", %[mprv]\n"	\
 			".option push\n"					\
@@ -43,10 +43,10 @@ int sbi_illegal_atomic(ulong insn, struct sbi_trap_regs *regs)
 			".option pop\n"						\
 			"csrw " STR(CSR_MSTATUS) ", %[mstatus]\n"		\
 			"csrw " STR(CSR_MTVEC) ", %[mtvec]"			\
-		    : [mstatus] "+&r"(mstatus), [mtvec] "+&r"(mtvec),		\
-		      [tinfo] "+&r"(tinfo), [ret] "=&r"(ret)			\
+		    : [mstatus] "+&r"(mstatus), [mtvec] "+&"PTR_REG(mtvec),	\
+		      [tinfo] "+&"PTR_REG(tinfo), [ret] "=&r"(ret)		\
 		    : [addr] "m"(*addr), [mprv] "r"(MSTATUS_MPRV),		\
-		      [taddr] "r"((ulong)trap)					\
+		      [taddr] PTR_REG((uintptr_t)trap)				\
 		    : "a4", "memory");						\
 		return ret;							\
 	}
@@ -55,13 +55,13 @@ int sbi_illegal_atomic(ulong insn, struct sbi_trap_regs *regs)
 	static type sc_##type##aqrl(type *addr, type val,			\
 				struct sbi_trap_info *trap)			\
 	{									\
-		register ulong tinfo asm("a3");					\
+		register uintptr_t tinfo asm(PREG(a3));				\
 		register ulong mstatus = 0;					\
-		register ulong mtvec = (ulong)sbi_hart_expected_trap;		\
+		register uintptr_t mtvec = (uintptr_t)sbi_hart_expected_trap;	\
 		type ret = 0;							\
 		trap->cause = 0;						\
 		asm volatile(							\
-			"add %[tinfo], %[taddr], zero\n"			\
+			"mv %[tinfo], %[taddr]\n"			\
 			"csrrw %[mtvec], " STR(CSR_MTVEC) ", %[mtvec]\n"	\
 			"csrrs %[mstatus], " STR(CSR_MSTATUS) ", %[mprv]\n"	\
 			".option push\n"					\
@@ -70,10 +70,10 @@ int sbi_illegal_atomic(ulong insn, struct sbi_trap_regs *regs)
 			".option pop\n"						\
 			"csrw " STR(CSR_MSTATUS) ", %[mstatus]\n"		\
 			"csrw " STR(CSR_MTVEC) ", %[mtvec]"			\
-		    : [mstatus] "+&r"(mstatus), [mtvec] "+&r"(mtvec),		\
-		      [tinfo] "+&r"(tinfo), [ret] "=&r"(ret)			\
+		    : [mstatus] "+&r"(mstatus), [mtvec] "+&"PTR_REG(mtvec),	\
+		      [tinfo] "+&"PTR_REG(tinfo), [ret] "=&r"(ret)		\
 		    : [addr] "m"(*addr), [mprv] "r"(MSTATUS_MPRV),		\
-		      [val] "r"(val), [taddr] "r"((ulong)trap)			\
+		      [val] "r"(val), [taddr] PTR_REG((uintptr_t)trap)		\
 		    : "a4", "memory");						\
 		return ret;							\
 	}
@@ -101,9 +101,9 @@ DEFINE_UNPRIVILEGED_SC_FUNCTION(s64, _aqrl, sc.d.aqrl);
 	static int atomic_##name(ulong insn, struct sbi_trap_regs *regs)	\
 	{									\
 		struct sbi_trap_info uptrap;					\
-		ulong addr = GET_RS1(insn, regs);				\
+		uintptr_t addr = GET_RS1(insn, regs);				\
 		ulong val = GET_RS2(insn, regs);				\
-		ulong rd_val = 0;						\
+		uintptr_t rd_val = 0;						\
 		ulong fail = 1;							\
 		while (fail) {							\
 			rd_val = lr_##type((void *)addr, &uptrap);		\
