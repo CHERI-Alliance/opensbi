@@ -34,7 +34,7 @@ static void eic770x_system_reset(u32 type, u32 reason)
 	case SBI_SRST_RESET_TYPE_COLD_REBOOT:
 	case SBI_SRST_RESET_TYPE_WARM_REBOOT:
 		sbi_printf("%s: resetting...\n", __func__);
-		writel(EIC770X_SYSCRG_RST_VAL, (void *)EIC770X_SYSCRG_RST);
+		writel(EIC770X_SYSCRG_RST_VAL, ioremap(EIC770X_SYSCRG_RST, 8));
 	}
 
 	sbi_hart_hang();
@@ -148,9 +148,9 @@ static int eswin_eic7700_early_init(bool cold_boot)
 	sbi_system_reset_add_device(&eic770x_reset);
 
 	/* Enable bus blocker */
-	writel(1, (void*)EIC770X_TL64D2D_OUT);
-	writel(1, (void*)EIC770X_TL256D2D_OUT);
-	writel(1, (void*)EIC770X_TL256D2D_IN);
+	writel(1, ioremap(EIC770X_TL64D2D_OUT, 8));
+	writel(1, ioremap(EIC770X_TL256D2D_OUT, 8));
+	writel(1, ioremap(EIC770X_TL64D2D_OUT, 8));
 	asm volatile ("fence o, rw");
 
 	/* Block firmware in uncached memory */

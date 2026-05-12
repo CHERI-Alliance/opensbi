@@ -22,7 +22,7 @@
 static unsigned long eic770x_sysclk_rate(void)
 {
 	/* syscfg clock is a mux of 24Mhz xtal clock and spll0_fout3/divisor */
-	uint32_t syscfg_clk = readl_relaxed((void*)EIC770X_SYSCRG_SYSCLK);
+	uint32_t syscfg_clk = readl_relaxed(ioremap(EIC770X_SYSCRG_SYSCLK, 8));
 
 	if (EIC770X_SYSCLK_SEL(syscfg_clk))
 		return EIC770X_XTAL_CLK_RATE;
@@ -32,10 +32,10 @@ static unsigned long eic770x_sysclk_rate(void)
 
 static void eic770x_enable_uart_clk(unsigned port)
 {
-	uint32_t lsp_clk_en = readl_relaxed((void*)EIC770X_SYSCRG_LSPCLK0);
+	uint32_t lsp_clk_en = readl_relaxed(ioremap(EIC770X_SYSCRG_LSPCLK0, 8));
 
 	lsp_clk_en |= EIC770X_UART_CLK_BIT(port);
-	writel(lsp_clk_en, (void*)EIC770X_SYSCRG_LSPCLK0);
+	writel(lsp_clk_en, ioremap(EIC770X_SYSCRG_LSPCLK0, 8));
 }
 
 static void hfp_send_bmc_msg(uint8_t type, uint8_t cmd,
@@ -67,7 +67,7 @@ static void hfp_send_bmc_msg(uint8_t type, uint8_t cmd,
 	eic770x_enable_uart_clk(HFP_MCU_UART_PORT);
 
 	uart8250_device_init(&uart_dev,
-			EIC770X_UART(HFP_MCU_UART_PORT),
+			ioremap(EIC770X_UART(HFP_MCU_UART_PORT), EIC770X_UART_SIZE),
 			sysclk_rate,
 			HFP_MCU_UART_BAUDRATE,
 			EIC770X_UART_REG_SHIFT,
