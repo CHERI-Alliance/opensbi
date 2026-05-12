@@ -4,6 +4,7 @@
  */
 
 #include <platform_override.h>
+#include <sbi/riscv_io.h>
 #include <sbi_utils/fdt/fdt_helper.h>
 #include <sbi_utils/fdt/fdt_fixup.h>
 #include <sbi_utils/ipi/aclint_mswi.h>
@@ -23,7 +24,6 @@
 		(OPENPITON_DEFAULT_CLINT_ADDR + CLINT_MTIMER_OFFSET)
 
 static struct plic_data plic = {
-	.addr = (unsigned long)OPENPITON_DEFAULT_PLIC_ADDR,
 	.size = OPENPITON_DEFAULT_PLIC_SIZE,
 	.num_src = OPENPITON_DEFAULT_PLIC_NUM_SOURCES,
 	.flags = PLIC_FLAG_ARIANE_BUG,
@@ -35,7 +35,6 @@ static struct plic_data plic = {
 };
 
 static struct aclint_mswi_data mswi = {
-	.addr = (unsigned long)OPENPITON_DEFAULT_ACLINT_MSWI_ADDR,
 	.size = ACLINT_MSWI_SIZE,
 	.first_hartid = 0,
 	.hart_count = OPENPITON_DEFAULT_HART_COUNT,
@@ -43,11 +42,7 @@ static struct aclint_mswi_data mswi = {
 
 static struct aclint_mtimer_data mtimer = {
 	.mtime_freq = OPENPITON_DEFAULT_ACLINT_MTIMER_FREQ,
-	.mtime_addr = (unsigned long)OPENPITON_DEFAULT_ACLINT_MTIMER_ADDR +
-		      ACLINT_DEFAULT_MTIME_OFFSET,
 	.mtime_size = ACLINT_DEFAULT_MTIME_SIZE,
-	.mtimecmp_addr = (unsigned long)OPENPITON_DEFAULT_ACLINT_MTIMER_ADDR +
-			 ACLINT_DEFAULT_MTIMECMP_OFFSET,
 	.mtimecmp_size = ACLINT_DEFAULT_MTIMECMP_SIZE,
 	.first_hartid = 0,
 	.hart_count = OPENPITON_DEFAULT_HART_COUNT,
@@ -65,6 +60,15 @@ static int openpiton_early_init(bool cold_boot)
 	uint64_t clint_addr;
 	int rc;
 
+	plic.addr = ioremap(OPENPITON_DEFAULT_PLIC_ADDR, plic.size);
+	mswi.addr = ioremap(OPENPITON_DEFAULT_ACLINT_MSWI_ADDR, mswi.size);
+	mtimer.mtime_addr = ioremap(OPENPITON_DEFAULT_ACLINT_MTIMER_ADDR +
+				    ACLINT_DEFAULT_MTIME_OFFSET,
+				    mtimer.mtime_size);
+	mtimer.mtimecmp_addr = ioremap(OPENPITON_DEFAULT_ACLINT_MTIMER_ADDR +
+				       ACLINT_DEFAULT_MTIMECMP_OFFSET,
+				       mtimer.mtimecmp_size);
+
 	if (!cold_boot)
 		return 0;
 	fdt = fdt_get_address();
@@ -81,13 +85,15 @@ static int openpiton_early_init(bool cold_boot)
 	if (!rc)
 		mtimer.mtime_freq = aclint_freq;
 
-	rc = fdt_parse_compat_addr(fdt, &clint_addr, "riscv,clint0");
+	rc = fdt_parse_compat_addr_size(fdt, &clint_addr, NULL, "riscv,clint0");
 	if (!rc) {
-		mswi.addr = clint_addr;
-		mtimer.mtime_addr = clint_addr + CLINT_MTIMER_OFFSET +
-				    ACLINT_DEFAULT_MTIME_OFFSET;
-		mtimer.mtimecmp_addr = clint_addr + CLINT_MTIMER_OFFSET +
-				    ACLINT_DEFAULT_MTIMECMP_OFFSET;
+		mswi.addr = ioremap(clint_addr, plic.size);
+		mtimer.mtime_addr = ioremap(clint_addr + CLINT_MTIMER_OFFSET +
+				    	    ACLINT_DEFAULT_MTIME_OFFSET,
+					    mtimer.mtime_size);
+		mtimer.mtimecmp_addr = ioremap(clint_addr + CLINT_MTIMER_OFFSET +
+					    ACLINT_DEFAULT_MTIMECMP_OFFSET,
+					    mtimer.mtimecmp_size);
 	}
 
 	if (rc)
