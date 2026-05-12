@@ -21,7 +21,7 @@
 #include <sbi_utils/hsm/fdt_hsm_sifive_tmc0.h>
 
 struct sifive_tmc0 {
-	unsigned long reg;
+	void *reg;
 	struct sbi_dlist node;
 	u32 id;
 };
@@ -82,17 +82,17 @@ int sifive_tmc0_set_wakemask_enareq(u32 hartid)
 {
 	struct sbi_scratch *scratch = sbi_hartid_to_scratch(hartid);
 	struct sifive_tmc0 *tmc0 = tmc0_ptr_get(scratch);
-	unsigned long addr;
+	void *addr;
 	u32 v;
 
 	if (!tmc0)
 		return SBI_ENODEV;
 
 	addr = tmc0->reg + SIFIVE_TMC_WAKE_MASK_OFF;
-	v = readl((void *)addr);
-	writel(v | SIFIVE_TMC_WAKE_MASK_WREQ, (void *)addr);
+	v = readl(addr);
+	writel(v | SIFIVE_TMC_WAKE_MASK_WREQ, addr);
 
-	while (!(readl((void *)addr) & SIFIVE_TMC_WAKE_MASK_ACK));
+	while (!(readl(addr) & SIFIVE_TMC_WAKE_MASK_ACK));
 
 	return SBI_OK;
 }
@@ -101,31 +101,31 @@ void sifive_tmc0_set_wakemask_disreq(u32 hartid)
 {
 	struct sbi_scratch *scratch = sbi_hartid_to_scratch(hartid);
 	struct sifive_tmc0 *tmc0 = tmc0_ptr_get(scratch);
-	unsigned long addr;
+	void *addr;
 	u32 v;
 
 	if (!tmc0)
 		return;
 
 	addr = tmc0->reg + SIFIVE_TMC_WAKE_MASK_OFF;
-	v = readl((void *)addr);
-	writel(v & ~SIFIVE_TMC_WAKE_MASK_WREQ, (void *)addr);
+	v = readl(addr);
+	writel(v & ~SIFIVE_TMC_WAKE_MASK_WREQ, addr);
 
-	while (readl((void *)addr) & SIFIVE_TMC_WAKE_MASK_ACK);
+	while (readl(addr) & SIFIVE_TMC_WAKE_MASK_ACK);
 }
 
 bool sifive_tmc0_is_pg(u32 hartid)
 {
 	struct sbi_scratch *scratch = sbi_hartid_to_scratch(hartid);
 	struct sifive_tmc0 *tmc0 = tmc0_ptr_get(scratch);
-	unsigned long addr;
+	void *addr;
 	u32 v;
 
 	if (!tmc0)
 		return false;
 
 	addr = tmc0->reg + SIFIVE_TMC_PG_OFF;
-	v = readl((void *)addr);
+	v = readl(addr);
 	if (!(v & SIFIVE_TMC_PG_ENA_ACK) ||
 	    (v & SIFIVE_TMC_PG_ENARSP) ||
 	    (v & SIFIVE_TMC_PG_DIS_REQ))
@@ -138,40 +138,40 @@ static void sifive_tmc0_set_resumepc(physical_addr_t addr)
 {
 	struct sifive_tmc0 *tmc0 = tmc0_ptr_get(sbi_scratch_thishart_ptr());
 
-	writel((u32)addr, (void *)(tmc0->reg + SIFIVE_TMC_RESUMEPC_LO));
+	writel((u32)addr, tmc0->reg + SIFIVE_TMC_RESUMEPC_LO);
 #if __riscv_xlen > 32
-	writel((u32)(addr >> 32), (void *)(tmc0->reg + SIFIVE_TMC_RESUMEPC_HI));
+	writel((u32)(addr >> 32), tmc0->reg + SIFIVE_TMC_RESUMEPC_HI);
 #endif
 }
 
 static u32 sifive_tmc0_set_pgprep_enareq(void)
 {
 	struct sifive_tmc0 *tmc0 = tmc0_ptr_get(sbi_scratch_thishart_ptr());
-	unsigned long reg = tmc0->reg + SIFIVE_TMC_PGPREP_OFF;
-	u32 v = readl((void *)reg);
+	void *reg = tmc0->reg + SIFIVE_TMC_PGPREP_OFF;
+	u32 v = readl(reg);
 
-	writel(v | SIFIVE_TMC_PGPREP_ENA_REQ, (void *)reg);
-	while (!(readl((void *)reg) & SIFIVE_TMC_PGPREP_ENA_ACK));
+	writel(v | SIFIVE_TMC_PGPREP_ENA_REQ, reg);
+	while (!(readl(reg) & SIFIVE_TMC_PGPREP_ENA_ACK));
 
-	v = readl((void *)reg);
+	v = readl(reg);
 	return v & SIFIVE_TMC_PGPREP_INTERNAL_ABORT;
 }
 
 static void sifive_tmc0_set_pgprep_disreq(void)
 {
 	struct sifive_tmc0 *tmc0 = tmc0_ptr_get(sbi_scratch_thishart_ptr());
-	unsigned long reg = tmc0->reg + SIFIVE_TMC_PGPREP_OFF;
-	u32 v = readl((void *)reg);
+	void *reg = tmc0->reg + SIFIVE_TMC_PGPREP_OFF;
+	u32 v = readl(reg);
 
-	writel(v | SIFIVE_TMC_PGPREP_DIS_REQ, (void *)reg);
-	while (!(readl((void *)reg) & SIFIVE_TMC_PGPREP_DIS_ACK));
+	writel(v | SIFIVE_TMC_PGPREP_DIS_REQ, reg);
+	while (!(readl(reg) & SIFIVE_TMC_PGPREP_DIS_ACK));
 }
 
 static u32 sifive_tmc0_get_pgprep_enarsp(void)
 {
 	struct sifive_tmc0 *tmc0 = tmc0_ptr_get(sbi_scratch_thishart_ptr());
-	unsigned long reg = tmc0->reg + SIFIVE_TMC_PGPREP_OFF;
-	u32 v = readl((void *)reg);
+	void *reg = tmc0->reg + SIFIVE_TMC_PGPREP_OFF;
+	u32 v = readl(reg);
 
 	return v & SIFIVE_TMC_PGPREP_ENARSP;
 }
@@ -179,10 +179,10 @@ static u32 sifive_tmc0_get_pgprep_enarsp(void)
 static void sifive_tmc0_set_pg_enareq(void)
 {
 	struct sifive_tmc0 *tmc0 = tmc0_ptr_get(sbi_scratch_thishart_ptr());
-	unsigned long reg = tmc0->reg + SIFIVE_TMC_PG_OFF;
-	u32 v = readl((void *)reg);
+	void *reg = tmc0->reg + SIFIVE_TMC_PG_OFF;
+	u32 v = readl(reg);
 
-	writel(v | SIFIVE_TMC_PG_ENA_REQ, (void *)reg);
+	writel(v | SIFIVE_TMC_PG_ENA_REQ, reg);
 }
 
 static int sifive_tmc0_prep(void)
@@ -323,7 +323,7 @@ static int sifive_tmc0_bind_cpu(struct sifive_tmc0 *tmc0)
 static int sifive_tmc0_probe(const void *fdt, int nodeoff, const struct fdt_match *match)
 {
 	struct sifive_tmc0 *tmc0;
-	u64 addr;
+	u64 addr, size;
 	int rc;
 
 	if (!tmc0_offset) {
@@ -338,11 +338,11 @@ static int sifive_tmc0_probe(const void *fdt, int nodeoff, const struct fdt_matc
 	if (!tmc0)
 		return SBI_ENOMEM;
 
-	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, NULL);
+	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, &size);
 	if (rc)
 		goto free_tmc0;
 
-	tmc0->reg = (unsigned long)addr;
+	tmc0->reg = ioremap(addr, size);
 	tmc0->id = fdt_get_phandle(fdt_get_address(), nodeoff);
 
 	rc = sifive_tmc0_bind_cpu(tmc0);

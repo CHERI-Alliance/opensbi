@@ -37,7 +37,7 @@ static const u64 cpu_idle_reg[] = {
 static inline void spacemit_set_cpu_power(u32 hartid, bool enable)
 {
 	unsigned int value;
-	unsigned int *cpu_idle_base = (unsigned int *)(unsigned long)cpu_idle_reg[hartid];
+	unsigned int *cpu_idle_base = (unsigned int *)ioremap((unsigned long)cpu_idle_reg[hartid], 8);
 
 	value = readl(cpu_idle_base);
 
@@ -54,7 +54,7 @@ static void spacemit_wakeup_cpu(u32 mpidr)
 	unsigned int *cpu_reset_base;
 	unsigned int cur_hartid = current_hartid();
 
-	cpu_reset_base = (unsigned int *)(unsigned long)cpu_wakeup_reg[cur_hartid];
+	cpu_reset_base = (unsigned int *)ioremap((unsigned long)cpu_wakeup_reg[cur_hartid], 8);
 
 	writel(1 << mpidr, cpu_reset_base);
 }
