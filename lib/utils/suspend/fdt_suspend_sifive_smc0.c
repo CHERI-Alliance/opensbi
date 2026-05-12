@@ -60,18 +60,18 @@
 #define SIFIVE_SMC_SYNCPMC_SYNC_ACK		BIT(29)
 
 static struct aclint_mtimer_data smc_sync_timer;
-static unsigned long smc0_base;
+static void* smc0_base;
 
 static void sifive_smc0_set_pmcsync(char regid, bool write_mode)
 {
-	unsigned long addr = smc0_base + SIFIVE_SMC_SYNC_PMC_OFF;
+	void *addr = smc0_base + SIFIVE_SMC_SYNC_PMC_OFF;
 	u32 v = regid | SIFIVE_SMC_SYNCPMC_SYNC_REQ;
 
 	if (write_mode)
 		v |= SIFIVE_SMC_SYNCPMC_SYNC_WREQ;
 
-	writel(v, (void *)addr);
-	while (!(readl((void *)addr) & SIFIVE_SMC_SYNCPMC_SYNC_ACK));
+	writel(v, addr);
+	while (!(readl(addr) & SIFIVE_SMC_SYNCPMC_SYNC_ACK));
 }
 
 static u64 sifive_smc0_time_read(volatile u64 *addr)
@@ -91,12 +91,12 @@ static u64 sifive_smc0_time_read(volatile u64 *addr)
 static void sifive_smc0_set_resumepc(physical_addr_t raddr)
 {
 	/* Set resumepc_lo */
-	writel((u32)raddr, (void *)(smc0_base + SIFIVE_SMC_RESUMEPC_LO_OFF));
+	writel((u32)raddr, smc0_base + SIFIVE_SMC_RESUMEPC_LO_OFF);
 	/* copy resumepc_lo from SMC to PMC */
 	sifive_smc0_set_pmcsync(SIFIVE_SMC_RESUMEPC_LO_OFF, true);
 #if __riscv_xlen > 32
 	/* Set resumepc_hi */
-	writel((u32)(raddr >> 32), (void *)(smc0_base + SIFIVE_SMC_RESUMEPC_HI_OFF));
+	writel((u32)(raddr >> 32), smc0_base + SIFIVE_SMC_RESUMEPC_HI_OFF);
 	/* copy resumepc_hi from SMC to PMC */
 	sifive_smc0_set_pmcsync(SIFIVE_SMC_RESUMEPC_HI_OFF, true);
 #endif
@@ -104,49 +104,49 @@ static void sifive_smc0_set_resumepc(physical_addr_t raddr)
 
 static u32 sifive_smc0_get_pgprep_enarsp(void)
 {
-	u32 v = readl((void *)(smc0_base + SIFIVE_SMC_PGPREP_OFF));
+	u32 v = readl(smc0_base + SIFIVE_SMC_PGPREP_OFF);
 
 	return v & SIFIVE_SMC_PGPREP_ENARSP;
 }
 
 static void sifive_smc0_set_pgprep_disreq(void)
 {
-	unsigned long addr = smc0_base + SIFIVE_SMC_PGPREP_OFF;
-	u32 v = readl((void *)addr);
+	void *addr = smc0_base + SIFIVE_SMC_PGPREP_OFF;
+	u32 v = readl(addr);
 
-	writel(v | SIFIVE_SMC_PGPREP_DIS_REQ, (void *)addr);
-	while (!(readl((void *)addr) & SIFIVE_SMC_PGPREP_DIS_ACK));
+	writel(v | SIFIVE_SMC_PGPREP_DIS_REQ, addr);
+	while (!(readl(addr) & SIFIVE_SMC_PGPREP_DIS_ACK));
 }
 
 static u32 sifive_smc0_set_pgprep_enareq(void)
 {
-	unsigned long addr = smc0_base + SIFIVE_SMC_PGPREP_OFF;
-	u32 v = readl((void *)addr);
+	void *addr = smc0_base + SIFIVE_SMC_PGPREP_OFF;
+	u32 v = readl(addr);
 
-	writel(v | SIFIVE_SMC_PGPREP_ENA_REQ, (void *)addr);
-	while (!(readl((void *)addr) & SIFIVE_SMC_PGPREP_ENA_ACK));
+	writel(v | SIFIVE_SMC_PGPREP_ENA_REQ, addr);
+	while (!(readl(addr) & SIFIVE_SMC_PGPREP_ENA_ACK));
 
-	v = readl((void *)addr);
+	v = readl(addr);
 
 	return v & SIFIVE_SMC_PGPREP_ABORT;
 }
 
 static void sifive_smc0_set_pg_enareq(void)
 {
-	unsigned long addr = smc0_base + SIFIVE_SMC_PG_OFF;
-	u32 v = readl((void *)addr);
+	void *addr = smc0_base + SIFIVE_SMC_PG_OFF;
+	u32 v = readl(addr);
 
-	writel(v | SIFIVE_SMC_PG_ENA_REQ, (void *)addr);
+	writel(v | SIFIVE_SMC_PG_ENA_REQ, addr);
 }
 
 static inline void sifive_smc0_set_cg(bool enable)
 {
-	unsigned long addr = smc0_base + SIFIVE_SMC_WFI_UNCORE_CG_OFF;
+	void *addr = smc0_base + SIFIVE_SMC_WFI_UNCORE_CG_OFF;
 
 	if (enable)
-		writel(0, (void *)addr);
+		writel(0, addr);
 	else
-		writel(1, (void *)addr);
+		writel(1, addr);
 }
 
 static int sifive_smc0_prep(void)
@@ -291,13 +291,13 @@ static struct sbi_system_suspend_device smc0_sys_susp = {
 static int sifive_smc0_probe(const void *fdt, int nodeoff, const struct fdt_match *match)
 {
 	int rc;
-	u64 addr;
+	u64 addr, size;
 
-	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, NULL);
+	rc = fdt_get_node_addr_size(fdt, nodeoff, 0, &addr, &size);
 	if (rc)
 		return rc;
 
-	smc0_base = (unsigned long)addr;
+	smc0_base = ioremap(addr, size);
 	smc_sync_timer.time_rd = sifive_smc0_time_read;
 	smc_sync_timer.mtime_addr = smc0_base + SIFIVE_SMC_CYCLECOUNT_LO_OFF;
 
