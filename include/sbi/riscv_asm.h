@@ -17,35 +17,35 @@
 #ifdef __ASSEMBLER__
 #define __ASM_STR(x)	x
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define REG_ZERO	cnull
 #define REG(r)		c ## r
 
 #define PREG_NULL	cnull
 #define PREG(r)		c ## r
-#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+#else /* !defined(__CHERI__) */
 #define REG_ZERO	zero
 #define REG(r)		r
 
 #define PREG_NULL	zero
 #define PREG(r)		r
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 #else /* !__ASSEMBLER__ */
 #define __ASM_STR(x)	#x
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define REG_ZERO	"cnull"
 #define REG(r)		"c" #r
 
 #define PREG_NULL	"cnull"
 #define PREG(r)		"c" #r
-#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+#else /* !defined(__CHERI__) */
 #define REG_ZERO	"zero"
 #define REG(r)		#r
 
 #define PREG_NULL	"zero"
 #define PREG(r)		#r
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 #endif /* !__ASSEMBLER__ */
 
 #if __riscv_xlen == 64
@@ -60,7 +60,7 @@
 #define PAGE_SIZE	(_AC(1, UL) << PAGE_SHIFT)
 #define PAGE_MASK	(~(PAGE_SIZE - 1))
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define REG_L		__REG_SEL(lc, lc)
 #define REG_S		__REG_SEL(sc, sc)
 #define SZREG		__REG_SEL(16, 8)
@@ -121,7 +121,7 @@
 #error "Unexpected __SIZEOF_POINTER__"
 #endif /* !__SIZEOF_POINTER__ */
 
-#else  /* !defined(__CHERI_PURE_CAPABILITY__) */
+#else  /* !defined(__CHERI__) */
 #define REG_L		__REG_SEL(ld, lw)
 #define REG_S		__REG_SEL(sd, sw)
 #define SZREG		__REG_SEL(8, 4)
@@ -181,7 +181,7 @@
 #else /* !__SIZEOF_POINTER__ */
 #error "Unexpected __SIZEOF_POINTER__"
 #endif /* !__SIZEOF_POINTER__ */
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 
 #if __SIZEOF_LONG__ == 8
 #define RISCV_LONG		__ASM_STR(.dword)
@@ -253,7 +253,7 @@
 				     : "memory");                  \
 	})
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define ptr_csr_swap(csr, val)                                          \
 	({                                                              \
 		__uintcap_t __v = val;                                  \
@@ -291,12 +291,12 @@
 		__asm__ ("csrr %0, " __ASM_STR(csr) : "=C"(__v)); \
 		__v;                                              \
 	})	
-#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+#else /* !defined(__CHERI__) */
 #define ptr_csr_swap(csr, val)    csr_swap(csr, val)
 #define ptr_csr_write(csr, val)   csr_write(csr, val)
 #define ptr_csr_read(csr)         csr_read(csr)
 #define ptr_csr_read_relaxed(csr) csr_read_relaxed(csr)
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 
 #define csr_read_set(csr, val)                                          \
 	({                                                              \

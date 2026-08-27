@@ -49,13 +49,13 @@ static int sbi_ecall_dbcn_handler(unsigned long extid, unsigned long funcid,
 			return SBI_ERR_INVALID_PARAM;
 		sbi_hart_protection_map_range(regs->a1, regs->a0);
 		if (funcid == SBI_EXT_DBCN_CONSOLE_WRITE) {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 			out->value = sbi_nputs((const char *)cheri_build_cap_r(regs->a1, regs->a0), regs->a0);
 #else
 			out->value = sbi_nputs((const char *)regs->a1, regs->a0);
 #endif
 		} else {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 			out->value = sbi_ngets((char *)cheri_build_cap_rw(regs->a1, regs->a0), regs->a0);
 #else
 			out->value = sbi_ngets((char *)regs->a1, regs->a0);

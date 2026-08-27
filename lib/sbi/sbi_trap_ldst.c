@@ -122,7 +122,7 @@ static int sbi_trap_emulate_load(struct sbi_trap_context *tcntx,
 		shift = 8 * (sizeof(ulong) - len);
 #ifdef __riscv_flen
 	} else if ((insn & INSN_MASK_C_FLD) == INSN_MATCH_C_FLD) {
-#if __riscv_xlen == 64 && defined(__CHERI_PURE_CAPABILITY__)
+#if __riscv_xlen == 64 && defined(__CHERI__)
 		if (!cheri_is_integer_pointer_mode_execution(regs->mepc))
 			return sbi_trap_redirect(regs, orig_trap);
 #endif
@@ -130,7 +130,7 @@ static int sbi_trap_emulate_load(struct sbi_trap_context *tcntx,
 		len  = 8;
 		insn = RVC_RS2S(insn) << SH_RD;
 	} else if ((insn & INSN_MASK_C_FLDSP) == INSN_MATCH_C_FLDSP) {
-#if __riscv_xlen == 64 && defined(__CHERI_PURE_CAPABILITY__)
+#if __riscv_xlen == 64 && defined(__CHERI__)
 		if (!cheri_is_integer_pointer_mode_execution(regs->mepc))
 			return sbi_trap_redirect(regs, orig_trap);
 #endif
@@ -138,7 +138,7 @@ static int sbi_trap_emulate_load(struct sbi_trap_context *tcntx,
 		len = 8;
 #if __riscv_xlen == 32
 	} else if ((insn & INSN_MASK_C_FLW) == INSN_MATCH_C_FLW) {
-#if defined(__CHERI_PURE_CAPABILITY__)		
+#if defined(__CHERI__)
 		if (!cheri_is_integer_pointer_mode_execution(regs->mepc))
 			return sbi_trap_redirect(regs, orig_trap);
 #endif
@@ -146,7 +146,7 @@ static int sbi_trap_emulate_load(struct sbi_trap_context *tcntx,
 		len  = 4;
 		insn = RVC_RS2S(insn) << SH_RD;
 	} else if ((insn & INSN_MASK_C_FLWSP) == INSN_MATCH_C_FLWSP) {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		if (!cheri_is_integer_pointer_mode_execution(regs->mepc))
 			return sbi_trap_redirect(regs, orig_trap);
 #endif
@@ -253,14 +253,14 @@ static int sbi_trap_emulate_store(struct sbi_trap_context *tcntx,
 		val.data_ulong = GET_RS2C(insn, regs);
 #ifdef __riscv_flen
 	} else if ((insn & INSN_MASK_C_FSD) == INSN_MATCH_C_FSD) {
-#if __riscv_xlen == 64 && defined(__CHERI_PURE_CAPABILITY__)
+#if __riscv_xlen == 64 && defined(__CHERI__)
 		if (!cheri_is_integer_pointer_mode_execution(regs->mepc))
 			return sbi_trap_redirect(regs, orig_trap);
 #endif
 		len	     = 8;
 		val.data_u64 = GET_F64_RS2S(insn, regs);
 	} else if ((insn & INSN_MASK_C_FSDSP) == INSN_MATCH_C_FSDSP) {
-#if __riscv_xlen == 64 && defined(__CHERI_PURE_CAPABILITY__)
+#if __riscv_xlen == 64 && defined(__CHERI__)
 		if (!cheri_is_integer_pointer_mode_execution(regs->mepc))
 			return sbi_trap_redirect(regs, orig_trap);
 #endif		
@@ -268,14 +268,14 @@ static int sbi_trap_emulate_store(struct sbi_trap_context *tcntx,
 		val.data_u64 = GET_F64_RS2C(insn, regs);
 #if __riscv_xlen == 32
 	} else if ((insn & INSN_MASK_C_FSW) == INSN_MATCH_C_FSW) {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		if (!cheri_is_integer_pointer_mode_execution(regs->mepc))
 			return sbi_trap_redirect(regs, orig_trap);
 #endif
 		len	       = 4;
 		val.data_ulong = GET_F32_RS2S(insn, regs);
 	} else if ((insn & INSN_MASK_C_FSWSP) == INSN_MATCH_C_FSWSP) {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		if (!cheri_is_integer_pointer_mode_execution(regs->mepc))
 			return sbi_trap_redirect(regs, orig_trap);
 #endif		
@@ -308,7 +308,7 @@ static int sbi_misaligned_ld_emulator(int rlen, union sbi_ldst_data *out_val,
 	struct sbi_trap_regs *regs = &tcntx->regs;
 	struct sbi_trap_info uptrap;
 	int i;
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	u8 *ld_ptr = (u8*)cheri_build_cap_r(orig_trap->tval, rlen);
 #else
 	u8 *ld_ptr = (u8*)orig_trap->tval;
@@ -338,7 +338,7 @@ static int sbi_misaligned_st_emulator(int wlen, union sbi_ldst_data in_val,
 	struct sbi_trap_regs *regs = &tcntx->regs;
 	struct sbi_trap_info uptrap;
 	int i;
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	u8 *st_ptr = (u8*)cheri_build_cap_rw(orig_trap->tval, wlen);
 #else
 	u8 *st_ptr = (u8*)orig_trap->tval;

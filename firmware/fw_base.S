@@ -54,12 +54,12 @@ _start:
 	/* the code when -march=zcherihybrid.                              */
 	csrs CSR_MSECCFG, MSECCFG_CRE
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	modesw.cap
-#endif /* defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* defined(__CHERI__) */
 #endif /* defined(__riscv_zcherihybrid) */
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	/* Initialize the ca3 as infinite capability */
 	auipc 	PREG(a3), 0
 #if defined(__riscv_zcherihybrid)
@@ -107,7 +107,7 @@ _sc_fail:
 	li	t0, FW_TEXT_START	/* link start */
 	PC_PTR_L	PREG(t1), _fw_start	/* load start */
 	sub	t2, t1, t0		/* load offset */
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	/* initialize cap table before executing c functions */
 cheri_cap_init:
 	PC_PTR_L	PREG(t0), __cap_relocs_start
@@ -173,7 +173,7 @@ cheri_cap_init:
 10:
 	add	PREG(t0), PREG(t0), (SZXREG * 5)
 	blt	t0, t1, 2b
-#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+#else /* !defined(__CHERI__) */
 	PC_PTR_L	PREG(t0), __rela_dyn_start
 	PC_PTR_L	PREG(t1), __rela_dyn_end
 	beq	t0, t1, _relocate_done
@@ -190,7 +190,7 @@ cheri_cap_init:
 3:
 	add	PREG(t0), PREG(t0), (SZXREG * 3)
 	blt	t0, t1, 2b
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 _relocate_done:
 	/* At this point we are running from link address */
 
@@ -221,7 +221,7 @@ _bss_zero:
 	/* Setup temporary stack */
 	PC_PTR_L	PREG(s4), _fw_end
 	li	s5, (SBI_SCRATCH_SIZE * 2)
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	scaddr	PREG(s4), PREG(a3), s4
 	scbndsr	PREG(s4), PREG(s4), s5
 	li t0,	CHERI_PERM_STACK
@@ -298,7 +298,7 @@ _scratch_init:
 	sub	tp, tp, a5
 	li	a5, SBI_SCRATCH_SIZE
 	sub	tp, tp, a5
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	scaddr	PREG(tp), PREG(t3), tp	/* Initialize tp with the stored tp */
 	scbndsr PREG(tp), PREG(tp), a5	/* scratch bounds is SBI_SCRATCH_SIZE */
 	li t0,	CHERI_PERM_DATA	/* scratch is a read-write data */
@@ -483,7 +483,7 @@ _start_warm:
 	sub	tp, tp, a5
 	li	a5, SBI_SCRATCH_SIZE
 	sub	tp, tp, a5
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	PC_PTR_L	PREG(t0), cheri_infinite_cap
 	PREG_L	PREG(t1), 0(PREG(t0))
 	scaddr	PREG(tp), PREG(t1), tp		/* Initialize tp with infinite cap */
@@ -495,7 +495,7 @@ _start_warm:
 	csrw	CSR_MSCRATCH, PREG(tp)
 
 	/* Setup stack */
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	sub	a5, s8, a5	/* a5 <-- stack size (HART_STACK_SIZE - SBI_SCRATCH_SIZE) */
 	sub	sp, tp, a5	/* Get sp base */
 	scaddr	PREG(sp), PREG(t1), sp		/* Initialize sp with infinite cap */
@@ -521,7 +521,7 @@ _skip_trap_handler_hyp:
 
 	/* Initialize SBI runtime */
 	csrr	PREG(a0), CSR_MSCRATCH
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	PTR_L	PREG(ra), sbi_init
 	jalr	PREG(ra)
 #else
@@ -570,7 +570,7 @@ _hartid_to_scratch:
 	add	t1, t1, t2
 	li	t2, SBI_SCRATCH_SIZE
 	sub	a0, t1, t2
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	PC_PTR_L	PREG(t0), cheri_infinite_cap
 	PREG_L	PREG(t1), 0(PREG(t0))
 	scaddr	PREG(a0), PREG(t1), a0
@@ -643,20 +643,20 @@ memcmp:
 	srl	t0, t0, MSTATUS_MPP_SHIFT
 	and	t0, t0, PRV_M
 	slti	t0, t0, PRV_M
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	beqz	t0, 1f
 	PREG_L	PREG(t0), SBI_SCRATCH_STACK_OFFSET(PREG(tp))
 	j 2f
 1:
 	mv	PREG(t0), PREG(sp)
 2:
-#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+#else /* !defined(__CHERI__) */
 	add	t0, t0, -1
 	xor	sp, sp, tp
 	and	t0, t0, sp
 	xor	sp, sp, tp
 	xor	t0, tp, t0
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 
 	/* Save original SP on exception stack */
 	PREG_S	PREG(sp), (SBI_TRAP_REGS_OFFSET(sp) - SBI_TRAP_CONTEXT_SIZE)(PREG(t0))
@@ -741,7 +741,7 @@ memcmp:
 	.endif
 	and	t0, t0, 0x1
 .else
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	csrr	t0, CSR_MTVAL2
 	XREG_S	t0, (SBI_TRAP_REGS_SIZE + SBI_TRAP_INFO_OFFSET(tval2))(PREG(sp))
 #else
@@ -759,7 +759,7 @@ memcmp:
 .macro	TRAP_CALL_C_ROUTINE
 	/* Call C routine */
 	mv	PREG(a0), PREG(sp)
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	PTR_L	PREG(ra), sbi_trap_handler
 	jalr	PREG(ra)
 #else
@@ -954,7 +954,7 @@ fw_fdt_bin:
 #endif
 #endif
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	.section .data
 	.align 4
 	.globl cheri_infinite_cap

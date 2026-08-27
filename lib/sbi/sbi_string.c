@@ -126,7 +126,7 @@ void *sbi_memcpy(void *dest, const void *src, size_t count)
 	char *temp1	  = dest;
 	const char *temp2 = src;
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	if ((count >= sizeof(uintptr_t)) &&
 	    (cheri_is_aligned(temp1, sizeof(uintptr_t)) == cheri_is_aligned(temp2, sizeof(uintptr_t)))) {
 		size_t align_count = sizeof(uintptr_t);
@@ -169,7 +169,7 @@ void *sbi_memmove(void *dest, const void *src, size_t count)
 		return dest;
 
 	if (dest < src) {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		if ((count >= sizeof(uintptr_t)) &&
 		    (cheri_is_aligned(temp1, sizeof(uintptr_t)) == cheri_is_aligned(temp2, sizeof(uintptr_t)))) {
 			size_t align_count = sizeof(uintptr_t);
@@ -202,7 +202,7 @@ void *sbi_memmove(void *dest, const void *src, size_t count)
 		temp1 = (char *)dest + count;
 		temp2 = (char *)src + count;
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		if ((count >= sizeof(uintptr_t)) &&
 		    (cheri_is_aligned(temp1, sizeof(uintptr_t)) == cheri_is_aligned(temp2, sizeof(uintptr_t)))) {
 			size_t align_count = sizeof(uintptr_t);

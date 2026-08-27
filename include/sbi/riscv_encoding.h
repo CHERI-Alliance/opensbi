@@ -333,7 +333,7 @@
 /* Supervisor Trap Setup */
 #define CSR_SSTATUS			0x100
 #define CSR_SIE				0x104
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define CSR_STVEC			stvecc
 #elif defined(__riscv_zcherihybrid)
 #define CSR_STVEC			stvec
@@ -349,14 +349,14 @@
 #define CSR_SCOUNTINHIBIT		0x120
 
 /* Supervisor Trap Handling */
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define CSR_SSCRATCH		sscratchc
 #elif defined(__riscv_zcherihybrid)
 #define CSR_SSCRATCH			sscratch
 #else
 #define CSR_SSCRATCH			0x140
 #endif
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define CSR_SEPC			sepcc
 #elif defined(__riscv_zcherihybrid)
 #define CSR_SEPC			sepc
@@ -442,7 +442,7 @@
 /* Virtual Supervisor Registers (H-extension) */
 #define CSR_VSSTATUS			0x200
 #define CSR_VSIE			0x204
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define CSR_VSTVEC			vstvecc
 #elif defined(__riscv_zcherihybrid)
 #define CSR_VSTVEC			vstvec
@@ -450,7 +450,7 @@
 #define CSR_VSTVEC			0x205
 #endif
 #define CSR_VSSCRATCH			0x240
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define CSR_VSEPC			vsepcc
 #elif defined(__riscv_zcherihybrid)
 #define CSR_VSEPC			vsepc
@@ -515,7 +515,7 @@
 #define CSR_MEDELEG			0x302
 #define CSR_MIDELEG			0x303
 #define CSR_MIE				0x304
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define CSR_MTVEC			mtvecc
 #elif defined(__riscv_zcherihybrid)
 #define CSR_MTVEC			mtvec
@@ -530,14 +530,14 @@
 #define CSR_MENVCFGH			0x31a
 
 /* Machine Trap Handling */
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define CSR_MSCRATCH		mscratchc
 #elif defined(__riscv_zcherihybrid)
 #define CSR_MSCRATCH			mscratch
 #else
 #define CSR_MSCRATCH			0x340
 #endif
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #define CSR_MEPC			mepcc
 #elif defined(__riscv_zcherihybrid)
 #define CSR_MEPC			mepc

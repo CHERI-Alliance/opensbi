@@ -84,11 +84,11 @@ fw_save_info:
 fw_next_arg1:
 	PTR_L	PREG(a0), _dynamic_next_arg1
 	XREG_L	a0, (PREG(a0))
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	scaddr	PREG(a0), PREG(a3), a0
 	li a1,	CHERI_PERM_DATA		/* FDT is a read-write data */
 	acperm	PREG(a0), PREG(a0), a1
-#endif /* defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* defined(__CHERI__) */
 	ret
 
 	.section .entry, "ax", %progbits
@@ -101,9 +101,9 @@ fw_next_arg1:
 fw_next_addr:
 	PTR_L	PREG(a0), _dynamic_next_addr
 	XREG_L	a0, (PREG(a0))
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	scaddr	PREG(a0), PREG(a3), a0
-#endif /* defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* defined(__CHERI__) */
 	ret
 
 	.section .entry, "ax", %progbits

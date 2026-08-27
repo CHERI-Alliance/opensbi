@@ -181,7 +181,7 @@ static void mstatus_init(struct sbi_scratch *scratch)
 		}
 	}
 
-#if defined(__riscv_zcherihybrid)
+#if __has_feature(capabilities)
 	if (misa_extension('S'))
 		csr_set(CSR_MENVCFG, ENVCFG_CRE);
 #endif
@@ -765,7 +765,7 @@ int sbi_hart_init(struct sbi_scratch *scratch, bool cold_boot)
 		if (misa_extension('H'))
 			sbi_hart_expected_trap = &__sbi_expected_trap_hext;
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		sbi_hart_expected_trap = cheri_address_set(cheri_pcc_get(),
 						(uintptr_t)sbi_hart_expected_trap);
 #endif

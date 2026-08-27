@@ -16,7 +16,7 @@
 	.align 3
 	.globl _start
 _start:
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #if defined(__riscv_zcherihybrid)
 	/* Run test in capability pointer mode */
 	modesw.cap
@@ -51,7 +51,7 @@ _sc_fail:
 	REG_S		REG(a1), 0(PREG(a3))
 
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 #if defined(FW_PAYLOAD_OFFSET)
 	li		t0, (FW_TEXT_START+FW_PAYLOAD_OFFSET)	/* link start */
 #else
@@ -130,7 +130,7 @@ cheri_cap_init:
 	add	PREG(t0), PREG(t0), (SZXREG * 5)
 	blt	t0, t1, 2b
 _cheri_cap_init_done:
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 
 	/* Zero-out BSS */
 	PC_PTR_L	PREG(a4), _bss_start
@@ -152,7 +152,7 @@ _start_warm:
 	/* Setup stack */
 	PC_PTR_L	PREG(a3), _payload_end
 	li	a4, 0x2000
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	PC_PTR_L	PREG(a5), cheri_infinite_cap
 	PREG_L	PREG(a5), 0(PREG(a5))
 
@@ -168,7 +168,7 @@ _start_warm:
 	REG_L	REG(a0), 0(PREG(a3))
 	PC_PTR_L	PREG(a3), _boot_a1
 	REG_L	REG(a1), 0(PREG(a3))
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	PTR_L	PREG(ra), test_main
 	jalr	PREG(ra)
 #else
@@ -211,7 +211,7 @@ _boot_a1:
 __stack_chk_guard:
 	RISCV_PTR	0x95B5FF5A
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	.section .data
 	.align 4
 	.globl cheri_infinite_cap

@@ -41,7 +41,7 @@
 #define CHERI_PERM_IO			(~(CHERI_PERM_EXECUTE | CHERI_PERM_CAP))
 
 #ifndef __ASSEMBLER__
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 extern void* cheri_infinite_cap;
 
 static inline void *cheri_infinite_cap_get(void)

@@ -53,11 +53,11 @@ fw_next_arg1:
 #else
 	add	a0, a1, zero
 #endif
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	scaddr	PREG(a0), PREG(a3), a0
 	li a1,	CHERI_PERM_DATA		/* FDT is a read-write data */
 	acperm	PREG(a0), PREG(a0), a1
-#endif /* defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* defined(__CHERI__) */
 	ret
 
 	.section .entry, "ax", %progbits
@@ -78,9 +78,9 @@ fw_next_addr:
 #else
 #error "Must define at least FW_JUMP_ADDR or FW_JUMP_OFFSET"
 #endif
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	scaddr	PREG(a0), PREG(a3), a0
-#endif /* defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* defined(__CHERI__) */
 	ret
 
 	.section .entry, "ax", %progbits
