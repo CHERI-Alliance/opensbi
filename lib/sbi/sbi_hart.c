@@ -181,9 +181,9 @@ static void mstatus_init(struct sbi_scratch *scratch)
 		}
 	}
 
-#if __has_feature(capabilities)
+#if defined(__CHERI__)
 	if (misa_extension('S'))
-		csr_set(CSR_MENVCFG, ENVCFG_CRE);
+		csr_set(CSR_MENVCFG, ENVCFG_Y);
 #endif
 
 	/* Disable all interrupts */
@@ -251,7 +251,7 @@ static int delegate_traps(struct sbi_scratch *scratch)
 		exceptions |= (1U << CAUSE_STORE_GUEST_PAGE_FAULT);
 	}
 
-#if __has_feature(capabilities)
+#if defined(__riscv_zcheripurecap)
 	exceptions |= 1U << CAUSE_CHERI_FAULT;
 #endif
 
@@ -411,12 +411,14 @@ const struct sbi_hart_ext_data sbi_hart_ext[] = {
 _Static_assert(SBI_HART_EXT_MAX == array_size(sbi_hart_ext),
 	       "sbi_hart_ext[]: wrong number of entries");
 
-#if defined(__riscv_zcheripurecap)
-const char sbi_hart_zcheripurecap_ext[] = "zcheripurecap";
+#if defined(__riscv_y)
+const char sbi_hart_cheri_ext[] = "rvy";
+#elif defined(__riscv_zcheripurecap)
+const char sbi_hart_cheri_ext[] = "zcheripurecap";
+#endif
 #if defined(__riscv_zcherihybrid)
-const char sbi_hart_zcherihybrid_ext[] = "zcherihybrid";
-#endif /* !defined(__riscv_zcherihybrid) */
-#endif /* !defined(__riscv_zcheripurecap) */
+const char sbi_hart_cheri_hybrid_ext[] = "zcherihybrid";
+#endif
 
 /**
  * Get the hart extensions in string format
@@ -449,18 +451,18 @@ void sbi_hart_get_extensions_str(struct sbi_scratch *scratch,
 		offset = offset + sbi_strlen(sbi_hart_ext[ext].name) + 1;
 	}
 
-#if defined(__riscv_zcheripurecap)
+#ifdef __CHERI__
 	sbi_snprintf(extensions_str + offset,
 			 nestr - offset,
-			 "%s,", sbi_hart_zcheripurecap_ext);
-	offset = offset + sbi_strlen(sbi_hart_zcheripurecap_ext) + 1;
-#if defined(__riscv_zcherihybrid)
+			 "%s,", sbi_hart_cheri_ext);
+	offset = offset + sbi_strlen(sbi_hart_cheri_ext) + 1;
+#endif
+#ifdef __CHERI_HYBRID__
 	sbi_snprintf(extensions_str + offset,
 			 nestr - offset,
-			 "%s,", sbi_hart_zcherihybrid_ext);
-	offset = offset + sbi_strlen(sbi_hart_zcherihybrid_ext) + 1;
-#endif /* !defined(__riscv_zcherihybrid) */
-#endif /* !defined(__riscv_zcheripurecap) */
+			 "%s,", sbi_hart_cheri_hybrid_ext);
+	offset = offset + sbi_strlen(sbi_hart_cheri_hybrid_ext) + 1;
+#endif
 
 	if (offset)
 		extensions_str[offset - 1] = '\0';
@@ -862,41 +864,75 @@ sbi_hart_switch_mode(uintptr_t arg0, uintptr_t arg1,
 		}
 	}
 
-	register uintptr_t a0 asm(REG(a0)) = arg0;
-	register uintptr_t a1 asm(REG(a1)) = arg1;
-#if defined(__riscv_zcheripurecap)
+	register uintptr_t a0 asm(PREG(a0)) = arg0;
+	register uintptr_t a1 asm(PREG(a1)) = arg1;
+#if defined(__CHERI__)
+#if defined(__riscv_y)
 	__asm__ __volatile__(
-		"mv cra, cnull\n"
-		"mv csp, cnull\n"
-		"mv cgp, cnull\n"
-		"mv ctp, cnull\n"
-		"mv ct0, cnull\n"
-		"mv ct1, cnull\n"
-		"mv ct2, cnull\n"
-		"mv cs0, cnull\n"
-		"mv cs1, cnull\n"
-		"mv ca2, cnull\n"
-		"mv ca3, cnull\n"
-		"mv ca4, cnull\n"
-		"mv ca5, cnull\n"
-		"mv ca6, cnull\n"
-		"mv ca7, cnull\n"
-		"mv cs2, cnull\n"
-		"mv cs3, cnull\n"
-		"mv cs4, cnull\n"
-		"mv cs5, cnull\n"
-		"mv cs6, cnull\n"
-		"mv cs7, cnull\n"
-		"mv cs8, cnull\n"
-		"mv cs9, cnull\n"
-		"mv cs10, cnull\n"
-		"mv cs11, cnull\n"
-		"mv ct3, cnull\n"
-		"mv ct4, cnull\n"
-		"mv ct5, cnull\n"
-		"mv ct6, cnull\n"
-	    : : PTR_REG(a0), PTR_REG(a1));
+		"ymv ra, zero\n"
+		"ymv sp, zero\n"
+		"ymv gp, zero\n"
+		"ymv tp, zero\n"
+		"ymv t0, zero\n"
+		"ymv t1, zero\n"
+		"ymv t2, zero\n"
+		"ymv s0, zero\n"
+		"ymv s1, zero\n"
+		"ymv a2, zero\n"
+		"ymv a3, zero\n"
+		"ymv a4, zero\n"
+		"ymv a5, zero\n"
+		"ymv a6, zero\n"
+		"ymv a7, zero\n"
+		"ymv s2, zero\n"
+		"ymv s3, zero\n"
+		"ymv s4, zero\n"
+		"ymv s5, zero\n"
+		"ymv s6, zero\n"
+		"ymv s7, zero\n"
+		"ymv s8, zero\n"
+		"ymv s9, zero\n"
+		"ymv s10, zero\n"
+		"ymv s11, zero\n"
+		"ymv t3, zero\n"
+		"ymv t4, zero\n"
+		"ymv t5, zero\n"
+		"ymv t6, zero\n"
+		: :  "C" (a0), "C" (a1));
+#else
+	__asm__ __volatile__(
+		"cmv cra, zero\n"
+		"cmv csp, zero\n"
+		"cmv cgp, zero\n"
+		"cmv ctp, zero\n"
+		"cmv ct0, zero\n"
+		"cmv ct1, zero\n"
+		"cmv ct2, zero\n"
+		"cmv cs0, zero\n"
+		"cmv cs1, zero\n"
+		"cmv ca2, zero\n"
+		"cmv ca3, zero\n"
+		"cmv ca4, zero\n"
+		"cmv ca5, zero\n"
+		"cmv ca6, zero\n"
+		"cmv ca7, zero\n"
+		"cmv cs2, zero\n"
+		"cmv cs3, zero\n"
+		"cmv cs4, zero\n"
+		"cmv cs5, zero\n"
+		"cmv cs6, zero\n"
+		"cmv cs7, zero\n"
+		"cmv cs8, zero\n"
+		"cmv cs9, zero\n"
+		"cmv cs10, zero\n"
+		"cmv cs11, zero\n"
+		"cmv ct3, zero\n"
+		"cmv ct4, zero\n"
+		"cmv ct5, zero\n"
+		"cmv ct6, zero\n"
+		: :  "C" (a0), "C" (a1));
 #endif
-	__asm__ __volatile__("mret" : : PTR_REG(a0), PTR_REG(a1));
+#endif
+	__asm__ __volatile__("mret" : : PTR_REG (a0), PTR_REG (a1));
 	__builtin_unreachable();
 }

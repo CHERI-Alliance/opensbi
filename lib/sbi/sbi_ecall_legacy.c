@@ -27,7 +27,7 @@
 /*
  * The hart_mask is a virtual address pointer in legacy extension.
  * But the pointer is a capability pointer rather then a integer pointer
- * on a core supports Zcheripurecap extension.
+ * on a core supports RVY.
  * sbi_is_hart_mask_ptr_valid() is used to check if the virtual address
  * pointer is valid to be used to access the hart_mask.
  *
@@ -150,7 +150,7 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 		break;
 	case SBI_EXT_0_1_REMOTE_SFENCE_VMA_ASID:
 		pmask = (ulong *)regs->a0;
-#if defined(__CHERI__) && defined(__riscv_zcherihybrid)
+#if defined(__CHERI__)
 		if (pmask && cheri_is_integer_pointer_mode_execution(regs->mepc) && cheri_is_invalid(pmask))
 			pmask = cheri_build_cap_r((unsigned long)pmask, sizeof(ulong));
 #endif

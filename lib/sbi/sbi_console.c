@@ -269,11 +269,6 @@ static int printi(char **out, u32 *out_len, long long i,
 }
 
 #if defined(__CHERI__)
-#define	CHERI_PERM_GET_SDP(cap)		(cheri_perms_get(cap) >> 6 & 0xF)
-#define	CHERI_PERM_GET_CAP_LVL(cap)	(cheri_perms_get(cap) >> 4 & 0x1)
-#define CHERI_EXE_MODE_CAP_PTR		(0x0UL)
-#define CHERI_EXE_MODE_INT_PTR		(0x1UL)
-
 static int printcap(char **out, u32 *out_len, uintptr_t cap,
 		  int width, int flags, int type)
 {
@@ -289,10 +284,7 @@ static int printcap(char **out, u32 *out_len, uintptr_t cap,
 	unsigned int sdp_len = sizeof(unsigned long) >> 1;
 	unsigned int sdp_mask = 1 << (sdp_len - 1);
 	unsigned int level = CHERI_PERM_GET_CAP_LVL(cap);
-	unsigned long mode = CHERI_EXE_MODE_CAP_PTR;
-#if defined(__riscv_zcherihybrid)
-	__asm__ __volatile__("gcmode %0, %1\n" : "+r" (mode) : "C" (cap));
-#endif
+	unsigned long mode = cheri_is_integer_pointer_mode_execution(cap);
 
 	flags &= ~PAD_ALTERNATE;
 	flags |= PAD_ZERO;
@@ -357,7 +349,7 @@ static int printcap(char **out, u32 *out_len, uintptr_t cap,
 		*s++ = 'L';
 	else
 		*s++ = '-';
-#if defined(__riscv_zcherilevels)
+#if defined(__riscv_zcherilevels) || defined(__riscv_zylevels1b)
 	if (perm & (CHERI_PERM_STORE_LEVEL))
 		*s++ = 'S';
 	else
@@ -367,7 +359,7 @@ static int printcap(char **out, u32 *out_len, uintptr_t cap,
 		*s++ = 'E';
 	else
 		*s++ = '-';
-#else /* !defined(__riscv_zcherilevels) */
+#else /* !defined(__riscv_zcherilevels) && !defined(__riscv_zylevels1b) */
 	/* Print placeholder for non-zcherilevels */
 	*s++ = '-';
 	*s++ = '-';

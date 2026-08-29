@@ -15,14 +15,14 @@
 # error single-float only is not supported
 #endif
 
-#define get_f32(which) fmv.x.s a0, which; jr PREG(t0)
-#define put_f32(which) fmv.s.x which, a0; jr PREG(t0)
+#define get_f32(which) fmv.x.s a0, which; jr t0
+#define put_f32(which) fmv.s.x which, a0; jr t0
 #if __riscv_xlen == 64
-# define get_f64(which) fmv.x.d a0, which; jr PREG(t0)
-# define put_f64(which) fmv.d.x which, a0; jr PREG(t0)
+# define get_f64(which) fmv.x.d a0, which; jr t0
+# define put_f64(which) fmv.d.x which, a0; jr t0
 #else
-# define get_f64(which) fsd which, 0(a0); jr PREG(t0)
-# define put_f64(which) fld which, 0(a0); jr PREG(t0)
+# define get_f64(which) fsd which, 0(a0); jr t0
+# define put_f64(which) fld which, 0(a0); jr t0
 #endif
 
 	.text

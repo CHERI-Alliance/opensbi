@@ -6,25 +6,25 @@
 #define __RISCV_CHERI_H__
 
 #ifndef __ASSEMBLER__
-#if defined(__riscv_zcheripurecap)
+#if defined(__CHERI__)
 #include <cheriintrin.h>
 #endif
 #include <sbi/sbi_types.h>
 #else /* __ASSEMBLER__ */
 /* Capability permissions definition for assembly */
-#if defined(__riscv_zcheripurecap)
+#if defined(__CHERI__)
 #define CHERI_PERM_CAP			__CHERI_CAP_PERMISSION_CAPABILITY__
 #define CHERI_PERM_WRITE		__CHERI_CAP_PERMISSION_WRITE__
 #define CHERI_PERM_READ			__CHERI_CAP_PERMISSION_READ__
 #define CHERI_PERM_EXECUTE		__CHERI_CAP_PERMISSION_EXECUTE__
 #define CHERI_PERM_SYSTEM_REGS		__CHERI_CAP_PERMISSION_ACCESS_SYSTEM_REGISTERS__
 #define CHERI_PERM_LOAD_MUTABLE		__CHERI_CAP_PERMISSION_LOAD_MUTABLE__
-#if defined(__riscv_zcherilevels)
+#if defined(__riscv_zylevels1b) || defined(__riscv_zcherilevels)
 #define CHERI_PERM_ELEVATE_LEVEL	__CHERI_CAP_PERMISSION_ELEVATE_LEVEL__
 #define CHERI_PERM_STORE_LEVEL		__CHERI_CAP_PERMISSION_STORE_LEVEL__
 #define CHERI_PERM_CAPABILITY_LEVEL	__CHERI_CAP_PERMISSION_CAPABILITY_LEVEL__
-#endif /* defined(__riscv_zcherilevels) */
-#endif /* defined(__riscv_zcheripurecap) */
+#endif /* defined(__riscv_zylevels1b) || defined(__riscv_zcherilevels) */
+#endif /* defined(__CHERI__) */
 #endif /* __ASSEMBLER__ */
 
 /* Capability permissions for Stack */
@@ -40,9 +40,15 @@
 /* Capability permissions for IO*/
 #define CHERI_PERM_IO			(~(CHERI_PERM_EXECUTE | CHERI_PERM_CAP))
 
+#define CHERI_EXE_MODE_CAP_PTR		(0x0UL)
+#define CHERI_EXE_MODE_INT_PTR		(0x1UL)
+
 #ifndef __ASSEMBLER__
 #if defined(__CHERI__)
 extern void* cheri_infinite_cap;
+
+#define	CHERI_PERM_GET_SDP(cap)		(cheri_perms_get(cap) >> 6 & 0xF)
+#define	CHERI_PERM_GET_CAP_LVL(cap)	(cheri_perms_get(cap) >> 4 & 0x1)
 
 static inline void *cheri_infinite_cap_get(void)
 {
@@ -78,7 +84,9 @@ static inline void *cheri_build_cap_inf(unsigned long offset)
 static inline bool cheri_is_integer_pointer_mode_execution(const uintptr_t exe_cap)
 {
 	unsigned long mode = 0;
-#if defined(__riscv_zcherihybrid)
+#if defined(__riscv_zyhybrid)
+	__asm__ __volatile__("ymoder %0, %1\n" : "+r" (mode) : "C" (exe_cap));
+#elif defined(__riscv_zcherihybrid)
 	__asm__ __volatile__("gcmode %0, %1\n" : "+r" (mode) : "C" (exe_cap));
 #endif
 	return (bool)mode;

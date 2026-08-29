@@ -228,7 +228,11 @@
 #define ENVCFG_PMM_PMLEN_0		(_ULL(0x0) << 32)
 #define ENVCFG_PMM_PMLEN_7		(_ULL(0x2) << 32)
 #define ENVCFG_PMM_PMLEN_16		(_ULL(0x3) << 32)
-#define ENVCFG_CRE			(_UL(1) << 28)
+#if defined(__riscv_y)
+#define ENVCFG_Y			(_UL(1) << 9)
+#else
+#define ENVCFG_Y			(_UL(1) << 28)
+#endif
 #define ENVCFG_CBZE			(_UL(1) << 7)
 #define ENVCFG_CBCFE			(_UL(1) << 6)
 #define ENVCFG_CBIE_SHIFT		4
@@ -334,9 +338,11 @@
 #define CSR_SSTATUS			0x100
 #define CSR_SIE				0x104
 #if defined(__CHERI__)
-#define CSR_STVEC			stvecc
-#elif defined(__riscv_zcherihybrid)
+#if defined(__riscv_y)
 #define CSR_STVEC			stvec
+#else
+#define CSR_STVEC			stvecc
+#endif
 #else
 #define CSR_STVEC			0x105
 #endif
@@ -350,17 +356,15 @@
 
 /* Supervisor Trap Handling */
 #if defined(__CHERI__)
-#define CSR_SSCRATCH		sscratchc
-#elif defined(__riscv_zcherihybrid)
+#if defined(__riscv_y)
 #define CSR_SSCRATCH			sscratch
-#else
-#define CSR_SSCRATCH			0x140
-#endif
-#if defined(__CHERI__)
-#define CSR_SEPC			sepcc
-#elif defined(__riscv_zcherihybrid)
 #define CSR_SEPC			sepc
 #else
+#define CSR_SSCRATCH			sscratchc
+#define CSR_SEPC			sepcc
+#endif
+#else
+#define CSR_SSCRATCH			0x140
 #define CSR_SEPC			0x141
 #endif
 #define CSR_SCAUSE			0x142
@@ -443,17 +447,21 @@
 #define CSR_VSSTATUS			0x200
 #define CSR_VSIE			0x204
 #if defined(__CHERI__)
-#define CSR_VSTVEC			vstvecc
-#elif defined(__riscv_zcherihybrid)
+#if defined(__riscv_y)
 #define CSR_VSTVEC			vstvec
+#else
+#define CSR_VSTVEC			vstvecc
+#endif
 #else
 #define CSR_VSTVEC			0x205
 #endif
 #define CSR_VSSCRATCH			0x240
 #if defined(__CHERI__)
-#define CSR_VSEPC			vsepcc
-#elif defined(__riscv_zcherihybrid)
+#if defined(__riscv_y)
 #define CSR_VSEPC			vsepc
+#else
+#define CSR_VSEPC			vsepcc
+#endif
 #else
 #define CSR_VSEPC			0x241
 #endif
@@ -516,9 +524,11 @@
 #define CSR_MIDELEG			0x303
 #define CSR_MIE				0x304
 #if defined(__CHERI__)
-#define CSR_MTVEC			mtvecc
-#elif defined(__riscv_zcherihybrid)
+#if defined(__riscv_y)
 #define CSR_MTVEC			mtvec
+#else
+#define CSR_MTVEC			mtvecc
+#endif
 #else
 #define CSR_MTVEC			0x305
 #endif
@@ -531,17 +541,15 @@
 
 /* Machine Trap Handling */
 #if defined(__CHERI__)
-#define CSR_MSCRATCH		mscratchc
-#elif defined(__riscv_zcherihybrid)
+#if defined(__riscv_y)
 #define CSR_MSCRATCH			mscratch
-#else
-#define CSR_MSCRATCH			0x340
-#endif
-#if defined(__CHERI__)
-#define CSR_MEPC			mepcc
-#elif defined(__riscv_zcherihybrid)
 #define CSR_MEPC			mepc
 #else
+#define CSR_MSCRATCH			mscratchc
+#define CSR_MEPC			mepcc
+#endif
+#else
+#define CSR_MSCRATCH			0x340
 #define CSR_MEPC			0x341
 #endif
 #define CSR_MCAUSE			0x342
@@ -773,8 +781,10 @@
 #define MSECCFG_MMWP			(_UL(1) << MSECCFG_MMWP_SHIFT)
 #define MSECCFG_RLB_SHIFT		(2)
 #define MSECCFG_RLB			(_UL(1) << MSECCFG_RLB_SHIFT)
+#if defined(__riscv_zcherihybrid)
 #define MSECCFG_CRE_SHIFT		(3)
 #define MSECCFG_CRE			(_UL(1) << MSECCFG_CRE_SHIFT)
+#endif
 #define MSECCFG_USEED_SHIFT		(8)
 #define MSECCFG_USEED			(_UL(1) << MSECCFG_USEED_SHIFT)
 #define MSECCFG_SSEED_SHIFT		(9)
@@ -894,7 +904,9 @@
 #define CAUSE_LOAD_GUEST_PAGE_FAULT	0x15
 #define CAUSE_VIRTUAL_INST_FAULT	0x16
 #define CAUSE_STORE_GUEST_PAGE_FAULT	0x17
+#if defined(__riscv_zcheripurecap)
 #define CAUSE_CHERI_FAULT		0x1C
+#endif
 
 /* Common defines for all smstateen */
 #define SMSTATEEN_MAX_COUNT		4

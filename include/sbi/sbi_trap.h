@@ -237,14 +237,14 @@ struct sbi_trap_info {
 	/*
 	 * Make sure the stack pointer is aligned to 16 bytes to as
 	 * SBI_TRAP_CONTEXT_SIZE is used to shift the stack pointer in trap
-	 * exception. In integer mode on zcherihybird would use sc/lc instruction
-	 * to initial the structe aligned to 16 bytes. It would have alignement
-	 * isseue if the stack is not aligned to 16 bytes.
+	 * exception. In integer mode on RVY would use sy/ly instruction
+	 * to initialize the struct aligned to 16 bytes. It would have alignement
+	 * issues if the stack is not aligned to 16 bytes.
 	 *
 	 * TODO: May need to remove it if the size of struct sbi_trap_context
 	 * changes in future
 	 */
-	unsigned long reseved;
+	unsigned long reserved;
 };
 
 /** Representation of trap context saved on stack */

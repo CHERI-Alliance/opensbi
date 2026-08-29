@@ -17,28 +17,23 @@
 #ifdef __ASSEMBLER__
 #define __ASM_STR(x)	x
 
-#if defined(__CHERI__)
-#define REG_ZERO	cnull
-#define REG(r)		c ## r
-
-#define PREG_NULL	cnull
-#define PREG(r)		c ## r
-#else /* !defined(__CHERI__) */
-#define REG_ZERO	zero
-#define REG(r)		r
-
-#define PREG_NULL	zero
-#define PREG(r)		r
-#endif /* !defined(__CHERI__) */
 #else /* !__ASSEMBLER__ */
 #define __ASM_STR(x)	#x
 
 #if defined(__CHERI__)
+#if defined(__riscv_y)
+#define REG_ZERO	"zero"
+#define REG(r)		#r
+
+#define PREG_NULL	"zero"
+#define PREG(r)		"c" #r
+#elif defined(__riscv_zcheripurecap)
 #define REG_ZERO	"cnull"
 #define REG(r)		"c" #r
 
 #define PREG_NULL	"cnull"
 #define PREG(r)		"c" #r
+#endif /* !defined(__riscv_zcheripurecap) */
 #else /* !defined(__CHERI__) */
 #define REG_ZERO	"zero"
 #define REG(r)		#r
@@ -61,8 +56,8 @@
 #define PAGE_MASK	(~(PAGE_SIZE - 1))
 
 #if defined(__CHERI__)
-#define REG_L		__REG_SEL(lc, lc)
-#define REG_S		__REG_SEL(sc, sc)
+#define REG_L		__REG_SEL(ly, ly)
+#define REG_S		__REG_SEL(sy, sy)
 #define SZREG		__REG_SEL(16, 8)
 #define LGREG		__REG_SEL(4, 3)
 
@@ -71,13 +66,16 @@
 #define SZXREG		__REG_SEL(8, 4)
 #define LGXREG		__REG_SEL(3, 2)
 
-#define PREG_L		__REG_SEL(lc, lc)
-#define PREG_S		__REG_SEL(sc, sc)
+#define PREG_L		__REG_SEL(ly, ly)
+#define PREG_S		__REG_SEL(sy, sy)
+#define PREG_ADD	yadd
+#define PREG_ADDI	yaddi
+#define PREG_MV		ymv
 #define SZPREG		__REG_SEL(16, 8)
 #define LGPREG		__REG_SEL(4, 3)
 
-#define PC_PTR_L	__ASM_STR(llc)
-#define PTR_L		__ASM_STR(lgc)
+#define PC_PTR_L	__ASM_STR(lly)
+#define PTR_L		__ASM_STR(lgy)
 
 #define PTR_REG		"C"
 
@@ -134,6 +132,9 @@
 
 #define PREG_L		__REG_SEL(ld, lw)
 #define PREG_S		__REG_SEL(sd, sw)
+#define PREG_ADD	add
+#define PREG_ADDI	addi
+#define PREG_MV		mv
 #define SZPREG		__REG_SEL(8, 4)
 #define LGPREG		__REG_SEL(3, 2)
 
@@ -257,7 +258,7 @@
 #define ptr_csr_swap(csr, val)                                          \
 	({                                                              \
 		__uintcap_t __v = val;                                  \
-		__asm__ __volatile__("csrrw %0, " __ASM_STR(csr) ", %1" \
+		__asm__ __volatile__("csrrw %0, " __ASM_STR(csr) ", %1"	\
 				     : "=C"(__v)                        \
 				     : "CK"(__v)                        \
 				     : "memory");                       \
@@ -267,7 +268,7 @@
 #define ptr_csr_write(csr, val)                                         \
 	({                                                              \
 		__uintcap_t __v = val;                                  \
-		__asm__ __volatile__("csrw " __ASM_STR(csr) ", %0"      \
+		__asm__ __volatile__("csrw " __ASM_STR(csr) ", %0"	\
 				     : "+C"(__v)                        \
 				     :                                  \
 				     : "memory");                       \
@@ -277,7 +278,7 @@
 #define ptr_csr_read(csr)                                       \
 	({                                                      \
 		register __uintcap_t __v;                       \
-		__asm__ __volatile__("csrr %0, " __ASM_STR(csr) \
+		__asm__ __volatile__("csrr %0, " __ASM_STR(csr)	\
 				     : "=C"(__v)                \
 				     :                          \
 				     : "memory");               \
