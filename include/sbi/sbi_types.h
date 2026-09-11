@@ -51,7 +51,7 @@ typedef _Bool			bool;
 #endif
 
 typedef unsigned long		ulong;
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 typedef __uintcap_t		uintptr_t;
 #define PRIPTR			"#p"
 #else

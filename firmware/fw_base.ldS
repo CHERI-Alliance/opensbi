@@ -52,6 +52,14 @@
 		PROVIDE(__rela_dyn_end = .);
 	}
 
+        .got : {
+		*(.got)
+        }
+
+        .dynamic : {
+		*(.dynamic)
+        }
+
 	__cap_relocs : {
 		PROVIDE(__cap_relocs_start = .);
 		*(__cap_relocs)

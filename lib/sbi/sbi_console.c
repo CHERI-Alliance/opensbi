@@ -268,12 +268,7 @@ static int printi(char **out, u32 *out_len, long long i,
 	return pc + prints(out, out_len, s, width, flags);
 }
 
-#if defined(__CHERI_PURE_CAPABILITY__)
-#define	CHERI_PERM_GET_SDP(cap)		(cheri_perms_get(cap) >> 6 & 0xF)
-#define	CHERI_PERM_GET_CAP_LVL(cap)	(cheri_perms_get(cap) >> 4 & 0x1)
-#define CHERI_EXE_MODE_CAP_PTR		(0x0UL)
-#define CHERI_EXE_MODE_INT_PTR		(0x1UL)
-
+#if defined(__CHERI__)
 static int printcap(char **out, u32 *out_len, uintptr_t cap,
 		  int width, int flags, int type)
 {
@@ -289,10 +284,7 @@ static int printcap(char **out, u32 *out_len, uintptr_t cap,
 	unsigned int sdp_len = sizeof(unsigned long) >> 1;
 	unsigned int sdp_mask = 1 << (sdp_len - 1);
 	unsigned int level = CHERI_PERM_GET_CAP_LVL(cap);
-	unsigned long mode = CHERI_EXE_MODE_CAP_PTR;
-#if defined(__riscv_zcherihybrid)
-	__asm__ __volatile__("gcmode %0, %1\n" : "+r" (mode) : "C" (cap));
-#endif
+	unsigned long mode = cheri_is_integer_pointer_mode_execution(cap);
 
 	flags &= ~PAD_ALTERNATE;
 	flags |= PAD_ZERO;
@@ -357,7 +349,7 @@ static int printcap(char **out, u32 *out_len, uintptr_t cap,
 		*s++ = 'L';
 	else
 		*s++ = '-';
-#if defined(__riscv_zcherilevels)
+#if defined(__riscv_zcherilevels) || defined(__riscv_zylevels1b)
 	if (perm & (CHERI_PERM_STORE_LEVEL))
 		*s++ = 'S';
 	else
@@ -367,7 +359,7 @@ static int printcap(char **out, u32 *out_len, uintptr_t cap,
 		*s++ = 'E';
 	else
 		*s++ = '-';
-#else /* !defined(__riscv_zcherilevels) */
+#else /* !defined(__riscv_zcherilevels) && !defined(__riscv_zylevels1b) */
 	/* Print placeholder for non-zcherilevels */
 	*s++ = '-';
 	*s++ = '-';
@@ -420,7 +412,7 @@ static int printcaphex(char **out, u32 *out_len, uintptr_t cap,
 
 	return pc;
 }
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 
 static int print(char **out, u32 *out_len, const char *format, va_list args)
 {
@@ -509,13 +501,13 @@ static int print(char **out, u32 *out_len, const char *format, va_list args)
 				continue;
 			}
 			if ((*format == 'p') || (*format == 'P')) {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 				if (flags & PAD_ALTERNATE) {
 					pc += printcap(out, out_len, (uintptr_t)va_arg(args, void*),
 						     width, flags, *format);
 					continue;
 				}
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 				pc += printi(out, out_len, (uintptr_t)va_arg(args, void*),
 					     width, flags, *format);
 				continue;
@@ -534,7 +526,7 @@ static int print(char **out, u32 *out_len, const char *format, va_list args)
 						width, flags, type);
 					continue;
 				}
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 				if ((format[1] == 'p') || (format[1] == 'P')) {
 					++format;
 					if (flags & PAD_ALTERNATE)
@@ -545,7 +537,7 @@ static int print(char **out, u32 *out_len, const char *format, va_list args)
 						     width, flags, *format);
 					continue;
 				}
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 				if ((format[1] == 'u') || (format[1] == 'o')
 						|| (format[1] == 'd') || (format[1] == 'i')
 						|| (format[1] == 'x') || (format[1] == 'X')) {

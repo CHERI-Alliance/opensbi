@@ -71,7 +71,7 @@ static inline void sbi_dbtr_disable_shmem(
 static inline void *hart_shmem_base(
 	struct sbi_dbtr_hart_triggers_state *hs)
 {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	return ((void *)cheri_build_cap_rw(
 		(unsigned long)DBTR_SHMEM_MAKE_PHYS(hs->shmem.phys_hi, hs->shmem.phys_lo),
 		hs->total_trigs * sizeof(union sbi_dbtr_shmem_entry)));

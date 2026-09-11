@@ -28,7 +28,7 @@ static int sbi_ecall_hsm_handler(unsigned long extid, unsigned long funcid,
 
 	switch (funcid) {
 	case SBI_EXT_HSM_HART_START:
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		/* If hsm ecall caller is running in integer pointer executrion mode,
 		 * deiver a capability boot vector from infinite capability with m-bit
 		 * is 1 (Interger Pointer Mode) with the address of the integer pointer.

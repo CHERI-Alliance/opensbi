@@ -40,7 +40,7 @@
 #define SBI_SCRATCH_TRAP_CONTEXT_OFFSET		(6 * __SIZEOF_LONG__ + 5 * __SIZEOF_POINTER__)
 /** Offset of tmp0 member in sbi_scratch */
 #define SBI_SCRATCH_TMP0_OFFSET			(6 * __SIZEOF_LONG__ + 6 * __SIZEOF_POINTER__)
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 /** Offset of stack member in sbi_scratch */
 #define SBI_SCRATCH_STACK_OFFSET		(6 * __SIZEOF_LONG__ + 7 * __SIZEOF_POINTER__)
 /** Offset of options member in sbi_scratch */
@@ -94,7 +94,7 @@ struct sbi_scratch {
 	uintptr_t trap_context;
 	/** Temporary storage */
 	uintptr_t tmp0;
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	/** Stack */
 	uintptr_t stack;
 #endif
@@ -121,7 +121,7 @@ assert_member_offset(struct sbi_scratch, platform_addr, SBI_SCRATCH_PLATFORM_ADD
 assert_member_offset(struct sbi_scratch, hartid_to_scratch, SBI_SCRATCH_HARTID_TO_SCRATCH_OFFSET);
 assert_member_offset(struct sbi_scratch, trap_context, SBI_SCRATCH_TRAP_CONTEXT_OFFSET);
 assert_member_offset(struct sbi_scratch, tmp0, SBI_SCRATCH_TMP0_OFFSET);
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 assert_member_offset(struct sbi_scratch, stack, SBI_SCRATCH_STACK_OFFSET);
 #endif
 assert_member_offset(struct sbi_scratch, options, SBI_SCRATCH_OPTIONS_OFFSET);

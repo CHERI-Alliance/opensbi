@@ -27,7 +27,7 @@
 /*
  * The hart_mask is a virtual address pointer in legacy extension.
  * But the pointer is a capability pointer rather then a integer pointer
- * on a core supports Zcheripurecap extension.
+ * on a core supports RVY.
  * sbi_is_hart_mask_ptr_valid() is used to check if the virtual address
  * pointer is valid to be used to access the hart_mask.
  *
@@ -36,15 +36,15 @@
  */
 static inline int sbi_is_hart_mask_ptr_valid(ulong *pmask)
 {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	if (pmask && cheri_is_valid(pmask) &&
 	    (cheri_perms_get(pmask) & CHERI_PERM_READ))
 		return SBI_OK;
 
 	return SBI_EINVAL;
-#else  /* !defined(__CHERI_PURE_CAPABILITY__) */
+#else  /* !defined(__CHERI__) */
 	return SBI_OK;
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 }
 
 static bool sbi_load_hart_mask_unpriv(ulong *pmask, ulong *hmask, ulong *hbase,
@@ -95,7 +95,7 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 		break;
 	case SBI_EXT_0_1_SEND_IPI:
 		pmask = (ulong *)regs->a0;
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		if (pmask && cheri_is_integer_pointer_mode_execution(regs->mepc) && cheri_is_invalid(pmask))
 			pmask = cheri_build_cap_r((unsigned long)pmask, sizeof(ulong));
 #endif
@@ -112,7 +112,7 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 		break;
 	case SBI_EXT_0_1_REMOTE_FENCE_I:
 		pmask = (ulong *)regs->a0;
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		if (pmask && cheri_is_integer_pointer_mode_execution(regs->mepc) && cheri_is_invalid(pmask))
 			pmask = cheri_build_cap_r((unsigned long)pmask, sizeof(ulong));
 #endif
@@ -131,7 +131,7 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 		break;
 	case SBI_EXT_0_1_REMOTE_SFENCE_VMA:
 		pmask = (ulong *)regs->a0;
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		if (pmask && cheri_is_integer_pointer_mode_execution(regs->mepc) && cheri_is_invalid(pmask))
 			pmask = cheri_build_cap_r((unsigned long)pmask, sizeof(ulong));
 #endif
@@ -150,7 +150,7 @@ static int sbi_ecall_legacy_handler(unsigned long extid, unsigned long funcid,
 		break;
 	case SBI_EXT_0_1_REMOTE_SFENCE_VMA_ASID:
 		pmask = (ulong *)regs->a0;
-#if defined(__CHERI_PURE_CAPABILITY__) && defined(__riscv_zcherihybrid)
+#if defined(__CHERI__)
 		if (pmask && cheri_is_integer_pointer_mode_execution(regs->mepc) && cheri_is_invalid(pmask))
 			pmask = cheri_build_cap_r((unsigned long)pmask, sizeof(ulong));
 #endif

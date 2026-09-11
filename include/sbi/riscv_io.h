@@ -15,7 +15,7 @@
 #include <sbi/riscv_barrier.h>
 #include <sbi/sbi_types.h>
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 static inline void *ioremap(unsigned long base, unsigned long size)
 {
 	void *ptr = cheri_address_set(cheri_infinite_cap_get(), base);
@@ -26,12 +26,12 @@ static inline void *ioremap(unsigned long base, unsigned long size)
 	return (void *)ptr;
 }
 
-#else /* !defined(__CHERI_PURE_CAPABILITY__) */
+#else /* !defined(__CHERI__) */
 static inline void *ioremap(unsigned long base, unsigned long size)
 {
 	return (void *)base;
 }
-#endif /* !defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* !defined(__CHERI__) */
 
 static inline void __raw_writeb(u8 val, volatile void *addr)
 {

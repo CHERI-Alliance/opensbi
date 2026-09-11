@@ -1063,7 +1063,7 @@ int sbi_pmu_event_get_info(unsigned long shmem_phys_lo, unsigned long shmem_phys
 
 	sbi_hart_protection_map_range(shmem_phys_lo, shmem_size);
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	einfo = (struct sbi_pmu_event_info *)cheri_build_cap_rw(shmem_phys_lo,
 								shmem_size);
 #else

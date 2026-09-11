@@ -16,7 +16,7 @@ void _thead_tlb_flush_fixup_trap_handler(void);
 void thead_register_tlb_flush_trap_handler(void)
 {
 	uintptr_t mtvec = (uintptr_t)&_thead_tlb_flush_fixup_trap_handler;
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	mtvec = (uintptr_t)cheri_address_set(cheri_pcc_get(), mtvec);
 #endif
 	ptr_csr_write(CSR_MTVEC, mtvec);

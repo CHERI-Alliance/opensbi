@@ -109,7 +109,7 @@ static inline bool mpxy_shmem_enabled(struct mpxy_state *ms)
 /** Get hart shared memory base address */
 static inline void *hart_shmem_base(struct mpxy_state *ms)
 {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	return (void *)cheri_build_cap_rw(SHMEM_PHYS_ADDR(ms->shmem.shmem_addr_hi,
 							  ms->shmem.shmem_addr_lo),
 							mpxy_shmem_size);							      
@@ -381,7 +381,7 @@ int sbi_mpxy_set_shmem(unsigned long shmem_phys_lo,
 
 	/** Save the current shmem details in new shmem region */
 	if (flags == SBI_EXT_MPXY_SHMEM_FLAG_OVERWRITE_RETURN) {
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 		ret_buf = (unsigned long *)cheri_build_cap_rw((ulong)SHMEM_PHYS_ADDR(shmem_phys_hi,
 								  		     shmem_phys_lo), 
 							      mpxy_shmem_size);		

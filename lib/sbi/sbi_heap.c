@@ -56,7 +56,7 @@ static bool alloc_nodes(struct sbi_heap_control *hpctrl)
 				sbi_list_del(&n->head);
 				sbi_list_add_tail(&n->head, &hpctrl->free_node_list);
 			}
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 			new = (void *)cheri_build_cap_rw(n->addr + n->size, size);
 #else
 			new = (void *)(n->addr + n->size);
@@ -134,7 +134,7 @@ static void *alloc_with_align(struct sbi_heap_control *hpctrl,
 
 	sbi_list_del(&np->head);
 	sbi_list_add_tail(&np->head, &hpctrl->used_space_list);
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	ret = cheri_build_cap_rw(np->addr, np->size);
 #else
 	ret = (void *)np->addr;

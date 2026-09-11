@@ -336,11 +336,11 @@ int sbi_hsm_hart_start(struct sbi_scratch *scratch,
 	init_count = sbi_init_count(hartindex);
 	entry_count = sbi_entry_count(hartindex);
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 	if (cheri_is_invalid(saddr) ||
 	    !(cheri_perms_get(saddr) & CHERI_PERM_EXECUTE))
 		return SBI_EINVALID_ADDR;
-#endif /* defined(__CHERI_PURE_CAPABILITY__) */
+#endif /* defined(__CHERI__) */
 
 	rscratch->next_arg1 = arg1;
 	rscratch->next_addr = saddr;

@@ -203,7 +203,7 @@ int sbi_misaligned_v_ld_emulator(int rlen, union sbi_ldst_data *out_val,
 				addr = base + offset;
 			}
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 			u8 *addr_ptr = (u8*)cheri_build_cap_r(addr, stride);
 #else
 			u8 *addr_ptr = (u8*)addr;
@@ -314,7 +314,7 @@ int sbi_misaligned_v_st_emulator(int wlen, union sbi_ldst_data in_val,
 				get_vreg(vlenb, vd + seg * emul, vstart * len,
 					 len, &bytes[seg * len]);
 
-#if defined(__CHERI_PURE_CAPABILITY__)
+#if defined(__CHERI__)
 			u8 *addr_ptr = (u8*)cheri_build_cap_rw(addr, stride);
 #else
 			u8 *addr_ptr = (u8*)addr;

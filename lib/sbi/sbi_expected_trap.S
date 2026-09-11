@@ -27,15 +27,15 @@ __sbi_expected_trap:
 	li	a4, MSTATUS_MPRV
 	csrc	CSR_MSTATUS, a4
 	csrr	a4, CSR_MCAUSE
-	XREG_S	a4, SBI_TRAP_INFO_OFFSET(cause)(PREG(a3))
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(cause)(a3)
 	csrr	a4, CSR_MTVAL
-	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tval)(PREG(a3))
-	XREG_S	zero, SBI_TRAP_INFO_OFFSET(tval2)(PREG(a3))
-	XREG_S	zero, SBI_TRAP_INFO_OFFSET(tinst)(PREG(a3))
-	XREG_S	zero, SBI_TRAP_INFO_OFFSET(gva)(PREG(a3))
-	csrr	PREG(a4), CSR_MEPC
-	add	PREG(a4), PREG(a4), 4
-	csrw	CSR_MEPC, PREG(a4)
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tval)(a3)
+	XREG_S	zero, SBI_TRAP_INFO_OFFSET(tval2)(a3)
+	XREG_S	zero, SBI_TRAP_INFO_OFFSET(tinst)(a3)
+	XREG_S	zero, SBI_TRAP_INFO_OFFSET(gva)(a3)
+	csrr	a4, CSR_MEPC
+	PREG_ADDI	a4, a4, 4
+	csrw	CSR_MEPC, a4
 	mret
 	.size __sbi_expected_trap, . - __sbi_expected_trap
 
@@ -47,13 +47,13 @@ __sbi_expected_trap_hext:
 	li	a4, MSTATUS_MPRV
 	csrc	CSR_MSTATUS, a4
 	csrr	a4, CSR_MCAUSE
-	XREG_S	a4, SBI_TRAP_INFO_OFFSET(cause)(PREG(a3))
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(cause)(a3)
 	csrr	a4, CSR_MTVAL
-	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tval)(PREG(a3))
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tval)(a3)
 	csrr	a4, CSR_MTVAL2
-	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tval2)(PREG(a3))
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tval2)(a3)
 	csrr	a4, CSR_MTINST
-	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tinst)(PREG(a3))
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(tinst)(a3)
 
 	/* Extract GVA bit from MSTATUS or MSTATUSH */
 #if __riscv_xlen == 32
@@ -64,10 +64,10 @@ __sbi_expected_trap_hext:
 	srli	a4, a4, MSTATUS_GVA_SHIFT
 #endif
 	andi	a4, a4, 1
-	XREG_S	a4, SBI_TRAP_INFO_OFFSET(gva)(PREG(a3))
+	XREG_S	a4, SBI_TRAP_INFO_OFFSET(gva)(a3)
 
-	csrr	PREG(a4), CSR_MEPC
-	add	PREG(a4), PREG(a4), 4
-	csrw	CSR_MEPC, PREG(a4)
+	csrr	a4, CSR_MEPC
+	PREG_ADDI	a4, a4, 4
+	csrw	CSR_MEPC, a4
 	mret
 	.size __sbi_expected_trap_hext, . - __sbi_expected_trap_hext
